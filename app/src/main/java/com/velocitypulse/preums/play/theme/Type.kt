@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.home.theme
+package com.velocitypulse.preums.play.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

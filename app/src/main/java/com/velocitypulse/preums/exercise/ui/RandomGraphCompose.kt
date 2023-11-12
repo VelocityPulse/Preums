@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.home.ui
+package com.velocitypulse.preums.exercise.ui
 
 import android.graphics.PointF
 import androidx.compose.foundation.layout.Box
@@ -24,7 +24,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 @Composable
-fun ExerciseGraph(modifier: Modifier = Modifier) {
+fun RandomGraphCompose(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier.fillMaxSize()
     ) {

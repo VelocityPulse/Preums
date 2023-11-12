@@ -13,9 +13,8 @@
         android:theme="@style/Theme.Preums"
         tools:targetApi="31">
         <activity
-            android:name=".home.ui.HomeActivity"
+            android:name=".play.ui.PlayActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Preums">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

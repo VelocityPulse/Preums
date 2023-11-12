@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.home.ui
+package com.velocitypulse.preums.exercise.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -14,7 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.velocitypulse.preums.home.theme.PreumsTheme
+import com.velocitypulse.preums.play.theme.PreumsTheme
 
 @Composable
 fun DrawRosace(modifier: Modifier = Modifier) {

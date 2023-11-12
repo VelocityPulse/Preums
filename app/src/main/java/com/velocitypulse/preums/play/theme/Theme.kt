@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.home.theme
+package com.velocitypulse.preums.play.theme
 
 import android.app.Activity
 import android.os.Build

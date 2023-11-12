@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.home.ui
+package com.velocitypulse.preums.exercise.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -89,5 +89,5 @@ fun ClearColorThemePrinter(modifier: Modifier = Modifier) {
 
 @Composable
 fun BackgroundColorPrinter(modifier: Modifier = Modifier.fillMaxSize()) {
-    ExerciseGraph(modifier)
+    RandomGraphCompose(modifier)
 }

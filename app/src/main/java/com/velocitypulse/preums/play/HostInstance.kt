@@ -4,5 +4,6 @@ data class HostInstance(
     val name: String,
     val playersCount: Int,
     val isLocked: Boolean,
-    val password: String?
+    val password: String?,
+    val primaryColor: Int
 )

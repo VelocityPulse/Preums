@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -26,6 +27,9 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+
     var dismissed by rememberSaveable {
         mutableStateOf(false)
     }
@@ -43,11 +47,11 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                         .padding(horizontal = 8.dp)
                         .clickable {
                             dismissed = true
-                            GlobalScope.launch {
-                                HostServer().startServer(context = context)
+                            scope.launch {
+                                HostServer().startServer(context)
                             }
-                            GlobalScope.launch {
-                                HostClient().startClient()
+                            scope.launch {
+                                HostClient().startClient(context)
                             }
                         },
                 )

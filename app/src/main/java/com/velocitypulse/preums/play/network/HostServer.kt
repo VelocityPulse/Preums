@@ -1,10 +1,8 @@
 package com.velocitypulse.preums.play.network
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import android.widget.Toast.LENGTH_SHORT
 import com.velocitypulse.preums.play.HostInstance
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
@@ -17,7 +15,8 @@ import kotlinx.coroutines.withContext
 import java.net.ServerSocket
 import java.net.Socket
 
-class HostServer {
+
+class HostServer: Host() {
 
     private val serverSocket = ServerSocket()
 
@@ -30,20 +29,29 @@ class HostServer {
     }
 
     suspend fun startServer(context: Context) {
+
+        // TODO : is wifi enabled ?
+
         withContext(Dispatchers.IO) {
 
+            val ip = getLocalIP(context)
+            Log.d("debug", "retrieved ip ${ip?.hostName}")
+
+            val broadcast = getBroadcast(ip!!)
+            Log.d("debug", "retrieved broadcast ${broadcast!!.hostName}")
+
             val selectorManager = SelectorManager(Dispatchers.IO)
-            val serverSocket = aSocket(selectorManager).tcp().bind("127.0.0.1", 9002)
+            // TODO ip !! warning
+//            val serverSocket = aSocket(selectorManager).tcp().bind(ip!!.hostName, 59002)
+//            val serverSocket = aSocket(selectorManager).tcp().bind(broadcast!!.hostName, 59002)
+            val serverSocket = aSocket(selectorManager).tcp().bind("0.0.0.0", 59002)
+            val socketCandidate = serverSocket.accept()
 
-            val socket = serverSocket.accept()
-            Log.d("debug", "accepted")
+            val receiveChannel = socketCandidate.openReadChannel()
 
-            val receiveChannel = socket.openReadChannel()
-
-            while (true) {
-                val text = receiveChannel.readUTF8Line(256)
+            if (receiveChannel.readUTF8Line(30) == "asking connection") {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, text, LENGTH_SHORT).show()
+                    Toast.makeText(context, "requesting connection", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -54,5 +62,4 @@ class HostServer {
             serverSocket.close()
         }
     }
-
 }

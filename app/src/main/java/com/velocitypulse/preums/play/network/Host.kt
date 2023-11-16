@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.system.OsConstants
 import android.util.Log
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.writeStringUtf8
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -35,5 +37,9 @@ abstract class Host {
             Log.d("debug", "getBroadcast" + e.message)
         }
         return null
+    }
+
+    suspend fun ByteWriteChannel.writeLine(message: String) {
+        writeStringUtf8(message + "\n")
     }
 }

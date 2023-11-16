@@ -1,9 +1,11 @@
 package com.velocitypulse.preums.play
 
 data class HostInstance(
+    val ip: String,
+    val port: Int,
     val name: String,
     val playersCount: Int,
     val isLocked: Boolean,
-    val password: String?,
+    var password: String?,
     val primaryColor: Int
 )

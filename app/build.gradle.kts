@@ -54,6 +54,7 @@ dependencies {
     implementation("io.insert-koin:koin-androidx-compose:3.5.0")
 
     implementation("io.ktor:ktor-network:2.3.6")
+    implementation("org.jmdns:jmdns:3.5.8")
 
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")

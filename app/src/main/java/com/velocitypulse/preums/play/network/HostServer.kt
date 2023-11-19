@@ -2,7 +2,6 @@ package com.velocitypulse.preums.play.network
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.velocitypulse.preums.play.HostInstance
@@ -10,25 +9,19 @@ import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
-import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
-import kotlin.random.Random
+import javax.jmdns.JmDNS
+import javax.jmdns.ServiceInfo
 
 
 class HostServer : Host() {
-
-    companion object {
-
-        private const val DISCOVERING_IP = "0.0.0.0"
-        private const val DISCOVERING_PORT = 59002
-        private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
-    }
 
     private val serverSocket = ServerSocket()
 
@@ -42,14 +35,32 @@ class HostServer : Host() {
     }
 
     suspend fun startServer(context: Context) {
+//        startServerBroadcast(context)
+        startServerMDNS(context)
+    }
 
-        // TODO : is wifi enabled ?
+    suspend fun startServerMDNS(context: Context) {
+        withContext(Dispatchers.IO) {
+            // Create a JmDNS instance
+            val jmdns = JmDNS.create("192.168.1.49")
+
+            // Register a service
+            val serviceInfo: ServiceInfo =
+                ServiceInfo.create("_http._tcp.local.", "SUCCEED", 1234, "path=index.html")
+            jmdns.registerService(serviceInfo)
+        }
+    }
+
+    suspend fun startServerBroadcast(context: Context) {
 
         withContext(Dispatchers.IO) {
 
             val selectorManager = SelectorManager(Dispatchers.IO)
             // TODO ip !! warning
-            val serverSocket = aSocket(selectorManager).tcp().bind(DISCOVERING_IP, DISCOVERING_PORT)
+            val serverSocket = aSocket(selectorManager).tcp().bind(
+                "255.255.255.255", DISCOVERING_PORT
+            )
+            Log.d("debug", "accepting")
             val socketCandidate = serverSocket.accept()
 
             val receiveChannel = socketCandidate.openReadChannel()
@@ -63,7 +74,7 @@ class HostServer : Host() {
                     val testHostInstance = HostInstance(
                         ip = localIp,
                         port = CONNECTION_PORT,
-                        name = "testInstance",
+                        name = "testInstanceName",
                         playersCount = 5,
                         isLocked = true,
                         password = "root",
@@ -78,7 +89,7 @@ class HostServer : Host() {
                     sendChannel.writeLine(testHostInstance.primaryColor.toString())
 
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, localIp, Toast.LENGTH_LONG).show()
+//                        Toast.makeText(context, localIp, Toast.LENGTH_LONG).show()
                     }
                 }
             }

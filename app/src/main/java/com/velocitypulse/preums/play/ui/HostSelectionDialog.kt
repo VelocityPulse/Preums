@@ -20,7 +20,6 @@ import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
 import com.velocitypulse.preums.play.theme.PreumsTheme
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -38,9 +37,9 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
         AlertDialog(modifier = Modifier,
             title = { Text(text = "Find host") },
             onDismissRequest = { },
-            confirmButton = {
+            dismissButton = {
                 Text(
-                    text = "connect",
+                    text = "host server",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
@@ -50,6 +49,18 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                             scope.launch {
                                 HostServer().startServer(context)
                             }
+                        },
+                )
+            },
+            confirmButton = {
+                Text(
+                    text = "discover",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(horizontal = 8.dp)
+                        .clickable {
+                            dismissed = true
                             scope.launch {
                                 HostClient().startClient(context)
                             }

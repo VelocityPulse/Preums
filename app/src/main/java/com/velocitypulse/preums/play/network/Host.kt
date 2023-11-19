@@ -10,9 +10,23 @@ import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.SocketException
+import kotlin.random.Random
 
 
 abstract class Host {
+
+    companion object {
+        @JvmStatic
+//        protected val DISCOVERING_IP = "0.0.0.0"
+        protected val DISCOVERING_IP = "192.168.0.255"
+
+        @JvmStatic
+        protected val DISCOVERING_PORT = 59002
+
+        @JvmStatic
+        protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
+    }
+
     protected fun getLocalIP(context: Context): Inet4Address? {
         val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
@@ -14,11 +15,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.net.InetAddress
+import java.io.BufferedWriter
 import java.net.ServerSocket
 import java.net.Socket
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
+import javax.net.ssl.SSLServerSocketFactory
 
 
 class HostServer : Host() {
@@ -35,8 +37,8 @@ class HostServer : Host() {
     }
 
     suspend fun startServer(context: Context) {
-//        startServerBroadcast(context)
         startServerMDNS(context)
+        startGameServer(context)
     }
 
     suspend fun startServerMDNS(context: Context) {
@@ -45,60 +47,39 @@ class HostServer : Host() {
             val jmdns = JmDNS.create("192.168.1.49")
 
             // Register a service
-            val serviceInfo: ServiceInfo =
-                ServiceInfo.create("_http._tcp.local.", "SUCCEED", 1234, "path=index.html")
+            val serviceInfo: ServiceInfo = ServiceInfo.create(
+                "_http._tcp.local.", "SUCCEED", CONNECTION_PORT, context.packageName
+            )
             jmdns.registerService(serviceInfo)
         }
     }
 
-    suspend fun startServerBroadcast(context: Context) {
-
+    private suspend fun startGameServer(context: Context) {
         withContext(Dispatchers.IO) {
+            Log.d("debug", "Starting game server")
+            val serverSocketFactory = getSecuredSocketFactory()
+            // TODO : recréer getSecuredSocketFactory mais qui retourne serversocketfactory au lieu
+                // de socketfactory
+            val serverSocket = serverSocketFactory.createServerSocket(CONNECTION_PORT)
+            val clientSocket = serverSocket.accept()
+            Log.d("debug", "Contact accepted")
 
-            val selectorManager = SelectorManager(Dispatchers.IO)
-            // TODO ip !! warning
-            val serverSocket = aSocket(selectorManager).tcp().bind(
-                "255.255.255.255", DISCOVERING_PORT
+            val receiveChannel =  clientSocket.openReadChannel()
+            val sendChannel = clientSocket.openWriteChannel()
+
+            val infoInstance = HostInfo(
+                name = "partie1",
+                playersCount = 5,
+                isLocked = false,
+                primaryColor = Color.Blue.toArgb(),
+                password = null
             )
-            Log.d("debug", "accepting")
-            val socketCandidate = serverSocket.accept()
 
-            val receiveChannel = socketCandidate.openReadChannel()
-            val sendChannel = socketCandidate.openWriteChannel(autoFlush = true)
-
-            if (receiveChannel.readUTF8Line(30) == "asking for discovering") {
-                getLocalIP(context)?.hostAddress?.let { localIp ->
-
-                    Log.d("debug", "retrieved ip $localIp")
-
-                    val testHostInstance = HostInstance(
-                        ip = localIp,
-                        port = CONNECTION_PORT,
-                        name = "testInstanceName",
-                        playersCount = 5,
-                        isLocked = true,
-                        password = "root",
-                        primaryColor = Color.Cyan.toArgb()
-                    )
-
-                    sendChannel.writeLine(testHostInstance.ip)
-                    sendChannel.writeLine(testHostInstance.port.toString())
-                    sendChannel.writeLine(testHostInstance.name)
-                    sendChannel.writeLine(testHostInstance.playersCount.toString())
-                    sendChannel.writeLine(testHostInstance.isLocked.toString())
-                    sendChannel.writeLine(testHostInstance.primaryColor.toString())
-
-                    withContext(Dispatchers.Main) {
-//                        Toast.makeText(context, localIp, Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
-    }
-
-    suspend fun stopServer() {
-        withContext(Dispatchers.IO) {
-            serverSocket.close()
+            sendChannel.writeLine(infoInstance.name)
+            sendChannel.writeLine(infoInstance.playersCount.toString())
+            sendChannel.writeLine(infoInstance.isLocked.toString())
+            sendChannel.writeLine(infoInstance.primaryColor.toString())
+            Log.d("debug", "Info sent")
         }
     }
 }

@@ -4,20 +4,42 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.system.OsConstants
 import android.util.Log
-import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.writeStringUtf8
+import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
+import java.net.Socket
 import java.net.SocketException
+import java.security.KeyStore
+import javax.net.SocketFactory
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManagerFactory
 import kotlin.random.Random
 
 
 abstract class Host {
 
     companion object {
+
         @JvmStatic
-//        protected val DISCOVERING_IP = "0.0.0.0"
+        protected val KEY_NAME = "keystore.jks"
+
+        @JvmStatic
+        protected val KEY_PASS = "eNCGfxUGH8yJPUi"
+
+        @JvmStatic
+        protected val KEY_INSTANCE_TYPE = "PKCS12"
+
+        @JvmStatic
+        protected val SSL_PROTOCOL = "TLS"
+
+        @JvmStatic
+        protected val KEY_ALGORITHM = "SunX509"
+
+
+        @JvmStatic
         protected val DISCOVERING_IP = "192.168.0.255"
 
         @JvmStatic
@@ -25,6 +47,30 @@ abstract class Host {
 
         @JvmStatic
         protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
+    }
+
+    protected fun getKeyStore(): KeyStore {
+        val keyStore = KeyStore.getInstance(KEY_INSTANCE_TYPE)
+        val keyStream = javaClass.classLoader?.getResourceAsStream(KEY_NAME)
+
+        keyStore.load(keyStream, KEY_PASS.toCharArray())
+
+        return keyStore
+    }
+
+    protected fun getSecuredSocketFactory(): SocketFactory {
+        val keyStore = getKeyStore()
+        return SSLContext.getInstance(SSL_PROTOCOL).apply {
+            val kmf = KeyManagerFactory.getInstance(KEY_ALGORITHM)
+            val keyStorePassphrase = KEY_PASS.toCharArray()
+
+            kmf.init(keyStore, keyStorePassphrase)
+
+            val tmf = TrustManagerFactory.getInstance(KEY_ALGORITHM)
+            tmf.init(keyStore)
+
+            init(kmf.keyManagers, tmf.trustManagers, null)
+        }.socketFactory
     }
 
     protected fun getLocalIP(context: Context): Inet4Address? {
@@ -53,7 +99,16 @@ abstract class Host {
         return null
     }
 
-    suspend fun ByteWriteChannel.writeLine(message: String) {
-        writeStringUtf8(message + "\n")
+    fun BufferedWriter.writeLine(message: String) {
+        write(message + System.lineSeparator())
+    }
+
+    fun Socket.openReadChannel(): BufferedReader {
+        return this.getInputStream().bufferedReader()
+    }
+
+
+    fun Socket.openWriteChannel(): BufferedWriter {
+        return this.getOutputStream().bufferedWriter()
     }
 }

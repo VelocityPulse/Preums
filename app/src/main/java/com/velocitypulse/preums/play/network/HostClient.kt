@@ -1,17 +1,9 @@
 package com.velocitypulse.preums.play.network
 
 import android.content.Context
-import android.net.ConnectivityManager
 import android.util.Log
-import android.widget.Toast
-import androidx.core.content.ContextCompat.getSystemService
+import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
-import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.utils.io.readUTF8Line
-import io.ktor.utils.io.writeStringUtf8
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,20 +11,23 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.net.ConnectException
-import java.net.Socket
+import java.net.InetSocketAddress
+import java.security.KeyStore
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceListener
+import javax.net.ssl.KeyManagerFactory
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManagerFactory
 
 class HostClient : Host() {
-    private val clientSocket = Socket()
+//    private val clientSocket = Socket()
 
     private var discoveringJob: Job? = null
     private var connectionJob: Job? = null
@@ -45,28 +40,37 @@ class HostClient : Host() {
 
             discoveringJob?.cancel()
             discoveringJob = CoroutineScope(coroutineContext).launch {
-//                startDiscoveringBroadcast(context).collect()
-                startDiscoveringMDNS(context).collect()
+                startDiscoveringMDNS(context).collect() {
+                    Log.d("Debug", "got instance: $it")
+                    contactServer(context, it)
+                }
             }
-//            connectServer()
         }
     }
 
-    private suspend fun startDiscoveringMDNS(context: Context): Flow<HostInstance> = flow {
-// Exemple (l'utilisation réelle peut varier selon la bibliothèque mDNS utilisée)
+    private suspend fun startDiscoveringMDNS(context: Context): Flow<HostInstance> = callbackFlow {
         val jmdns = JmDNS.create()
 
         val listener = object : ServiceListener {
             override fun serviceAdded(event: ServiceEvent) {
-                    Log.d("debug", "Service added: " + event.info);
+                Log.d("debug", "Service added: " + event.info);
             }
 
             override fun serviceRemoved(event: ServiceEvent) {
-//                    Log.d("debug", "Service removed : " + event.info);
             }
 
             override fun serviceResolved(event: ServiceEvent) {
-                Log.d("debug", "Service resolved : " + event.info);
+                if (event.info.hasData() && event.info.textBytes.decodeToString()
+                        .contains(context.packageName)) {
+                    Log.d("debug", "Service resolved : $event");
+                    trySend(
+                        HostInstance(
+                            ip = event.info.inet4Addresses.first().hostName,
+                            port = event.info.port,
+                            info = null
+                        )
+                    )
+                }
             }
         }
         jmdns.addServiceListener("_http._tcp.local.", listener)
@@ -75,56 +79,42 @@ class HostClient : Host() {
         }
     }
 
+    private suspend fun contactServer(context: Context, hostInstance: HostInstance) =
+        coroutineScope {
+            launch(Dispatchers.IO) {
 
-    private suspend fun connectServer(context: Context) = coroutineScope {
-        delay(500)
-    }
+                val keyStore = getKeyStore()
+                val sslContext = SSLContext.getInstance(SSL_PROTOCOL)
+                val kmf = KeyManagerFactory.getInstance(KEY_ALGORITHM)
+                val keyStorePassphrase = KEY_PASS.toCharArray()
 
-    private suspend fun startDiscoveringBroadcast(context: Context): Flow<HostInstance> = flow {
-        while (currentCoroutineContext().isActive) {
-            delay(500)
-            try {
-                val connectivityManager = getSystemService(context, ConnectivityManager::class.java)
-                val networkInfo = connectivityManager!!.activeNetworkInfo
+                kmf.init(keyStore, keyStorePassphrase)
 
-                if (networkInfo == null || !networkInfo.isConnected) {
-                    throw Exception("PAS DE RESEAU")
+                val tmf = TrustManagerFactory.getInstance(KEY_ALGORITHM)
+                tmf.init(keyStore)
+
+                sslContext.init(kmf.keyManagers, tmf.trustManagers, null)
+
+                val socketFactory = getSecuredSocketFactory()
+                socketFactory.createSocket().use { socket ->
+
+                    Log.d("debug", "Starting contact socket")
+                    socket.connect(InetSocketAddress(hostInstance.ip, hostInstance.port))
+                    Log.d("debug", "Contact socket connected")
+
+                    val receiveChannel = socket.openReadChannel()
+                    val sendChannel = socket.openWriteChannel()
+
+                    val hostInfo = HostInfo(
+                        name = receiveChannel.readLine()!!,
+                        playersCount = receiveChannel.readLine()!!.toInt(),
+                        isLocked = receiveChannel.readLine()!!.toBoolean(),
+                        password = null,
+                        primaryColor = receiveChannel.readLine()!!.toInt()
+                    )
+
+                    Log.d("debug", "Contact established: $hostInfo")
                 }
-
-                val selectorManager = SelectorManager(Dispatchers.IO)
-                val socket = aSocket(selectorManager).tcp().connect(
-                    "255.255.255.255", DISCOVERING_PORT
-                )
-
-                val sendingChannel = socket.openWriteChannel(autoFlush = true)
-                sendingChannel.writeStringUtf8("asking for discovering\n")
-
-                val receivingChannel = socket.openReadChannel()
-
-                val receivedTestHostInstance = HostInstance(
-                    ip = receivingChannel.readUTF8Line()!!,
-                    port = receivingChannel.readUTF8Line()!!.toInt(),
-                    name = receivingChannel.readUTF8Line()!!,
-                    playersCount = receivingChannel.readUTF8Line()!!.toInt(),
-                    isLocked = receivingChannel.readUTF8Line()!!.toBoolean(),
-                    password = null,
-                    primaryColor = receivingChannel.readUTF8Line()!!.toInt()
-                )
-
-                Log.d("debug", receivedTestHostInstance.toString())
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, receivedTestHostInstance.name, Toast.LENGTH_LONG).show()
-                }
-            } catch (e: ConnectException) {
-                e.printStackTrace()
             }
         }
-
-        suspend fun stopServer() {
-            withContext(Dispatchers.IO) {
-                clientSocket.close()
-            }
-        }
-    }
 }

@@ -68,6 +68,7 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.2")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.2")
+    implementation("com.google.android.gms:play-services-basement:18.2.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

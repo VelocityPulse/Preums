@@ -13,18 +13,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
-import java.security.KeyStore
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
 import javax.jmdns.ServiceListener
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
-import javax.net.ssl.SSLSocketFactory
-import javax.net.ssl.TrustManagerFactory
 
 class HostClient : Host() {
 //    private val clientSocket = Socket()
@@ -50,6 +46,7 @@ class HostClient : Host() {
 
     private suspend fun startDiscoveringMDNS(context: Context): Flow<HostInstance> = callbackFlow {
         val jmdns = JmDNS.create()
+        Log.d("debug", "starting MDNS init");
 
         val listener = object : ServiceListener {
             override fun serviceAdded(event: ServiceEvent) {
@@ -77,33 +74,31 @@ class HostClient : Host() {
         while (currentCoroutineContext().isActive) {
             delay(500)
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     private suspend fun contactServer(context: Context, hostInstance: HostInstance) =
         coroutineScope {
             launch(Dispatchers.IO) {
 
-                val keyStore = getKeyStore()
-                val sslContext = SSLContext.getInstance(SSL_PROTOCOL)
-                val kmf = KeyManagerFactory.getInstance(KEY_ALGORITHM)
-                val keyStorePassphrase = KEY_PASS.toCharArray()
-
-                kmf.init(keyStore, keyStorePassphrase)
-
-                val tmf = TrustManagerFactory.getInstance(KEY_ALGORITHM)
-                tmf.init(keyStore)
-
-                sslContext.init(kmf.keyManagers, tmf.trustManagers, null)
-
-                val socketFactory = getSecuredSocketFactory()
-                socketFactory.createSocket().use { socket ->
+                val socketFactory = getSecuredSocketFactory(context).socketFactory
+                socketFactory.createSocket()/*.use */.let { socket -> // TODO : put use
 
                     Log.d("debug", "Starting contact socket")
+                    // TODO : handle ConnectException
                     socket.connect(InetSocketAddress(hostInstance.ip, hostInstance.port))
                     Log.d("debug", "Contact socket connected")
 
                     val receiveChannel = socket.openReadChannel()
+                    Log.d("debug", "receive channel opened")
+
                     val sendChannel = socket.openWriteChannel()
+                    Log.d("debug", "send channel opened")
+
+                    Log.d("debug", "reading one debug line : " + receiveChannel.readLine())
+
+//                    sendChannel.writeLine("test")
+
+//                    while(true) delay(500)
 
                     val hostInfo = HostInfo(
                         name = receiveChannel.readLine()!!,
@@ -113,7 +108,7 @@ class HostClient : Host() {
                         primaryColor = receiveChannel.readLine()!!.toInt()
                     )
 
-                    Log.d("debug", "Contact established: $hostInfo")
+//                    Log.d("debug", "Contact established: $hostInfo")
                 }
             }
         }

@@ -1,0 +1,5 @@
+# Générer la keypair autosignée en PKSC12
+keytool -genkeypair -alias server -keyalg EC -sigalg SHA384withECDSA -keysize 256 -keystore servercert.p12 -storetype pkcs12 -v -storepass abc123 -validity 10000
+
+# Ouvrir le .p12 dans key explorer, puis aller dans changer le type et modifier en BKS
+Puis faire sauvegarder 

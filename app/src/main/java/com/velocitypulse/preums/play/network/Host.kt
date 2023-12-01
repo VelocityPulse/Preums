@@ -2,17 +2,22 @@ package com.velocitypulse.preums.play.network
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.os.Build
 import android.system.OsConstants
 import android.util.Log
+import com.google.android.gms.security.ProviderInstaller
+import com.velocitypulse.preums.R
 import java.io.BufferedReader
 import java.io.BufferedWriter
+import java.io.FileDescriptor
+import java.io.FileInputStream
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.Socket
 import java.net.SocketException
 import java.security.KeyStore
-import javax.net.SocketFactory
+import java.security.SecureRandom
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
@@ -27,7 +32,7 @@ abstract class Host {
         protected val KEY_NAME = "keystore.jks"
 
         @JvmStatic
-        protected val KEY_PASS = "eNCGfxUGH8yJPUi"
+        protected val KEY_PASS = "123456"
 
         @JvmStatic
         protected val KEY_INSTANCE_TYPE = "PKCS12"
@@ -49,29 +54,38 @@ abstract class Host {
         protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
     }
 
-    protected fun getKeyStore(): KeyStore {
-        val keyStore = KeyStore.getInstance(KEY_INSTANCE_TYPE)
-        val keyStream = javaClass.classLoader?.getResourceAsStream(KEY_NAME)
+    protected fun getKeyStore(context: Context): KeyStore {
+        val keyStore = KeyStore.getInstance("BKS")
+//        val keyStreamFd = context.resources.openRawResourceFd(R.raw.servercertbks)
+//        val keyStream = FileInputStream(keyStreamFd.fileDescriptor)
+        val keyStream = context.resources.openRawResource(R.raw.servercertbks)
+
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+//            Log.d("debug", keyStream.readAllBytes().contentToString())
+//        }
 
         keyStore.load(keyStream, KEY_PASS.toCharArray())
 
         return keyStore
     }
 
-    protected fun getSecuredSocketFactory(): SocketFactory {
-        val keyStore = getKeyStore()
-        return SSLContext.getInstance(SSL_PROTOCOL).apply {
-            val kmf = KeyManagerFactory.getInstance(KEY_ALGORITHM)
-            val keyStorePassphrase = KEY_PASS.toCharArray()
+    protected fun getSecuredSocketFactory(context: Context): SSLContext {
+        ProviderInstaller.installIfNeeded(context);
 
-            kmf.init(keyStore, keyStorePassphrase)
+        val keyStore = getKeyStore(context)
+        return SSLContext.getInstance("TLS").apply {
+            val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
+            kmf.init(keyStore, KEY_PASS.toCharArray())
 
-            val tmf = TrustManagerFactory.getInstance(KEY_ALGORITHM)
+            val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
             tmf.init(keyStore)
 
-            init(kmf.keyManagers, tmf.trustManagers, null)
-        }.socketFactory
+            init(kmf.keyManagers, tmf.trustManagers, SecureRandom.getInstanceStrong())
+//            init(kmf.keyManagers, null, null)
+        }
     }
+
+
 
     protected fun getLocalIP(context: Context): Inet4Address? {
         val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -111,4 +125,8 @@ abstract class Host {
     fun Socket.openWriteChannel(): BufferedWriter {
         return this.getOutputStream().bufferedWriter()
     }
+
+
 }
+
+

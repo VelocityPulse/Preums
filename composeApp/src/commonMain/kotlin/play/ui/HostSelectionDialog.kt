@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.ui
+package play.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
@@ -20,11 +20,12 @@ import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
 import com.velocitypulse.preums.play.theme.PreumsTheme
+import com.velocitypulse.preums.play.ui.PlayScreen
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
-fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
+fun HostSelectionDialog(viewModel: PlayViewModel = koinInject()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

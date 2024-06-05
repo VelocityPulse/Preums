@@ -1,18 +1,14 @@
-package com.velocitypulse.preums.core.di
+package core.di
 
-import android.app.Application
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
-import org.koin.core.logger.Level
 
 class ApplicationInitializer : KoinComponent {
 
-    fun run(application: Application) {
+    fun run() {
         startKoin {
-            androidContext(application)
+            modules(applicationModule)
         }
 
         loadKoinModules(

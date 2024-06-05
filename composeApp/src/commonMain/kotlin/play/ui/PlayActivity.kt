@@ -1,12 +1,13 @@
-package com.velocitypulse.preums.play.ui
+package play.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.velocitypulse.preums.core.di.ApplicationInitializer
+import core.di.ApplicationInitializer
 import com.velocitypulse.preums.play.Navigation
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 class PlayActivity : ComponentActivity() {
 

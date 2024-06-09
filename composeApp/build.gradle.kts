@@ -41,9 +41,13 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            implementation(libs.navigation.compose)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
             implementation(libs.lifecycle.viewmodel.compose)
+            implementation(libs.jmdns)
+            implementation(libs.ktor.network)
+            implementation("com.renfrowtech:kmp-log:0.1.3")
         }
     }
 }
@@ -84,4 +88,7 @@ android {
         debugImplementation(compose.uiTooling)
     }
 }
+//dependencies {
+//    implementation(libs.androidx.navigation.compose)
+//}
 

@@ -11,13 +11,17 @@ androidx-espresso-core = "3.5.1"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.1.5"
 compose-plugin = "1.6.10"
+jmdns = "3.5.8"
 junit = "4.13.2"
 koin = "3.5.6"
 kotlin = "2.0.0"
+ktorNetwork = "2.3.6"
 lifecycleViewmodelCompose = "2.8.0"
 koin-compose = "1.1.0"
+navigationCompose = "2.7.0-alpha07"
 
 [libraries]
+jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin-compose"}
@@ -31,7 +35,9 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 androidx-material = { group = "com.google.android.material", name = "material", version.ref = "androidx-material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktorNetwork" }
 lifecycle-viewmodel-compose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

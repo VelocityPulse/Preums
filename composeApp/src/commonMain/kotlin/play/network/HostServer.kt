@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.network
+package play.network
 
 import android.content.Context
 import android.util.Log
@@ -6,19 +6,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
+import com.velocitypulse.preums.play.network.Host
+import io.ktor.network.sockets.ServerSocket
+import io.ktor.network.sockets.Socket
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.BufferedReader
-import java.io.BufferedWriter
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.net.ServerSocket
-import java.net.Socket
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceInfo
 import javax.net.ssl.SSLServerSocket
@@ -46,6 +42,7 @@ class HostServer : Host() {
         withContext(Dispatchers.IO) {
             // Create a JmDNS instance
 //            val jmdns = JmDNS.create("192.168.1.49")
+
             val jmdns = JmDNS.create(getLocalIP(context))
 
             // Register a service
@@ -60,15 +57,15 @@ class HostServer : Host() {
 
 
         withContext(Dispatchers.IO) {
-            Log.d("debug", "Starting game server")
+//            Log.d("debug", "Starting game server")
             val serverSocketFactory = getSecuredSocketFactory(context).serverSocketFactory
             val serverSocket = serverSocketFactory.createServerSocket(CONNECTION_PORT) as SSLServerSocket
             serverSocket.enabledCipherSuites = serverSocket.supportedCipherSuites
             serverSocket.needClientAuth = true
             serverSocket.enabledProtocols = listOf("TLSv1.2").toTypedArray()
-            Log.d("debug", "trying to accept contact")
+//            Log.d("debug", "trying to accept contact")
             val clientSocket = serverSocket.accept()
-            Log.d("debug", "Contact accepted")
+//            Log.d("debug", "Contact accepted")
 
             // TODO :
             // quand le serveur et le client ouvrent leurs channel, ca crash
@@ -90,7 +87,7 @@ class HostServer : Host() {
             Log.d("debug", "received " + receiveChannel.readLine())
 */
 
-            Log.d("debug", "receive channel opened")
+//            Log.d("debug", "receive channel opened")
 
 
 
@@ -104,7 +101,7 @@ class HostServer : Host() {
 
 
             val sendChannel = clientSocket.openWriteChannel()
-            Log.d("debug", "send channel opened")
+//            Log.d("debug", "send channel opened")
 
 
             val infoInstance = HostInfo(
@@ -119,7 +116,7 @@ class HostServer : Host() {
             sendChannel.writeLine(infoInstance.playersCount.toString())
             sendChannel.writeLine(infoInstance.isLocked.toString())
             sendChannel.writeLine(infoInstance.primaryColor.toString())
-            Log.d("debug", "Info sent")
+//            Log.d("debug", "Info sent")÷
         }
     }
 }

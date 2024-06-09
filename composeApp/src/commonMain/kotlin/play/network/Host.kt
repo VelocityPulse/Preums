@@ -21,6 +21,7 @@ import java.security.SecureRandom
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
+import kotlin.jvm.JvmStatic
 import kotlin.random.Random
 
 

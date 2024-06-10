@@ -14,7 +14,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.velocitypulse.preums.play.theme.PreumsTheme
+import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 
 @Composable
 fun DrawRosace(modifier: Modifier = Modifier) {
@@ -80,7 +80,7 @@ fun DrawRosace(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    PreumsTheme {
+    PreviewInitializerProvider {
         DrawRosace(Modifier.background(MaterialTheme.colorScheme.primary))
     }
 }

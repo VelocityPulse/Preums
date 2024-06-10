@@ -16,10 +16,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
-import com.velocitypulse.preums.play.theme.PreumsTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -82,7 +82,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
 @Composable
 @Preview
 fun HostSelectionDialogPreview() {
-    PreumsTheme {
+    PreviewInitializerProvider {
         PlayScreen(navController = rememberNavController())
     }
 }

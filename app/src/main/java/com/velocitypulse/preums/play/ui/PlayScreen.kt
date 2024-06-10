@@ -15,9 +15,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
-import com.velocitypulse.preums.play.theme.PreumsTheme
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -42,7 +42,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
     }
 
     if (state is PlayState.HostSelection) {
-        val hostSelection = state as PlayState.HostSelection
+        val hostSelection = state
         HostSelectionDialog()
     }
 }
@@ -50,7 +50,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
 @Composable
 @Preview
 fun PreviewPlayScreen() {
-    PreumsTheme {
+    PreviewInitializerProvider {
         PlayScreen(navController = rememberNavController())
     }
 }

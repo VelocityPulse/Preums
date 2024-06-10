@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.velocitypulse.preums.core.di.ApplicationInitializer
+import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.Navigation
 
 class PlayActivity : ComponentActivity() {
@@ -23,7 +24,9 @@ class PlayActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun GreetingPreview() {
-        Navigation()
+        PreviewInitializerProvider {
+            Navigation()
+        }
     }
 }
 

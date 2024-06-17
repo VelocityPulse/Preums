@@ -9,7 +9,7 @@ import com.velocitypulse.preums.core.di.ApplicationInitializer
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.Navigation
 
-class PlayActivity : ComponentActivity() {
+class MainActivity : ComponentActivity() {
 
     private var applicationInitializer = ApplicationInitializer()
 

@@ -18,9 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayViewModel
-import com.velocitypulse.preums.play.network.HostClient
-import com.velocitypulse.preums.play.network.HostServer
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -46,9 +43,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                         .padding(horizontal = 8.dp)
                         .clickable {
                             dismissed = true
-                            scope.launch {
-                                HostServer().startServer(context)
-                            }
+                            viewModel.onStartHostServer(context)
                         },
                 )
             },
@@ -61,9 +56,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                         .padding(horizontal = 8.dp)
                         .clickable {
                             dismissed = true
-                            scope.launch {
-                                HostClient().startClient(context)
-                            }
+                            viewModel.onStartDiscovery(context)
                         },
                 )
             },

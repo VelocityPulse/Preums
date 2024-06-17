@@ -17,7 +17,7 @@
         android:theme="@style/Theme.Preums"
         tools:targetApi="31">
         <activity
-            android:name=".play.ui.PlayActivity"
+            android:name=".play.ui.MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Preums">
             <intent-filter>

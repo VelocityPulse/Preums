@@ -2,11 +2,13 @@ package com.velocitypulse.preums.play.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +20,8 @@ import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -31,6 +35,12 @@ fun PlayScreen(navController: NavController, viewModel: PlayViewModel = koinView
 @Composable
 fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
+        Text(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxHeight(0.5f),
+            text = state.javaClass.simpleName
+        )
         Button(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -42,7 +52,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
     }
 
     if (state is PlayState.HostSelection) {
-        val hostSelection = state
+//        val hostSelection = state
         HostSelectionDialog()
     }
 }

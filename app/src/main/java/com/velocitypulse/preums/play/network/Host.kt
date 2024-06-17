@@ -53,7 +53,6 @@ abstract class Host {
         @JvmStatic
         protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
     }
-
     protected fun getKeyStore(context: Context): KeyStore {
         val keyStore = KeyStore.getInstance("BKS")
 //        val keyStreamFd = context.resources.openRawResourceFd(R.raw.servercertbks)
@@ -84,8 +83,6 @@ abstract class Host {
 //            init(kmf.keyManagers, null, null)
         }
     }
-
-
 
     protected fun getLocalIP(context: Context): Inet4Address? {
         val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

@@ -30,8 +30,7 @@ class HostClient : Host() {
 
     val discoveredParties = flowOf<HostInstance>()
 
-    @Deprecated("rename start discovering")
-    suspend fun startClient(context: Context) {
+    suspend fun startDiscovering(context: Context) {
         withContext(Dispatchers.IO) {
 
             discoveringJob?.cancel()

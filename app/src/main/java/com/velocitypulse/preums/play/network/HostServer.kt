@@ -58,7 +58,6 @@ class HostServer : Host() {
 
     private suspend fun startGameServer(context: Context) {
 
-
         withContext(Dispatchers.IO) {
             Log.d("debug", "Starting game server")
             val serverSocketFactory = getSecuredSocketFactory(context).serverSocketFactory

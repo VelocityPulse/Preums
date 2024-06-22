@@ -147,7 +147,6 @@ abstract class Host {
     fun getBroadcastAddress(context: Context): InetAddress {
         val dhcp = context.getSystemService(WifiManager::class.java).dhcpInfo
 
-
         val broadcast = (dhcp.ipAddress and dhcp.netmask) or dhcp.netmask.inv()
         val quads = ByteArray(4)
         for (k in 0..3) quads[k] = ((broadcast shr k * 8) and 0xFF).toByte()

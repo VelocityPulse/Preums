@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -51,29 +52,68 @@ class HostServer : Host() {
         }.start()
 */
 
-        sendBroadcast("hello hello it's a success", getBroadcast(getLocalIP(context)!!)!!, context)
-        sendBroadcast("hello hello it's a success", getBroadcastAddress(context), context)
+        // BROADCAST 1
+        // Huawei : 192.168.1.255
+        // Nothing : 192.168.1.255
+        // Smasung A20E : 192.168.1.255
+        // Samsung S20FE : 192.168.1.255
+        val address1 = getBroadcast(getLocalIP(context)!!)!!
+        Log.d("debugPreums", "getting address from local IP and active network: ${address1.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 1", address1, context)
+
+        // BROADCAST 2
+        // Huawei : 192.168.1.255
+        // Nothing : 255.255.255.255
+        // Samsung A20E : 255.255.255.255
+        // Samsung S20FE : 255.255.255.255
+        val address2 = getBroadcastAddress(context)
+        Log.d("debugPreums", "getting address from DHCP: \t\t\t\t\t${address2.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 2", address2, context)
+
+        // BROADCAST 3
+        val address3 = Inet4Address.getByName("192.168.1.255")
+        Log.d("debugPreums", "getting address from DHCP: \t\t\t\t\t${address3.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 3", address3, context, true)
+
+        // BROADCAST 4
+        val address4 = Inet4Address.getByName("255.255.255.255")
+        Log.d("debugPreums", "getting address from local IP and active network: ${address4.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 4", address4, context, true)
+
+        // BROADCAST 5
+        val address5 = Inet4Address.getByName("192.168.1.255")
+        Log.d("debugPreums", "getting address from DHCP: \t\t\t\t\t${address5.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 5", address5, context, false)
+
+        // BROADCAST 6
+        val address6 = Inet4Address.getByName("255.255.255.255")
+        Log.d("debugPreums", "getting address from local IP and active network: ${address6.hostAddress}")
+        sendBroadcast("hello hello it's brdcast 6", address6, context, false)
+
 
 //        startServerMDNS(context)
 //        startGameServer(context)
     }
 
-    fun sendBroadcast(message: String, address: InetAddress, context: Context) {
+    fun sendBroadcast(message: String, address: InetAddress, context: Context, policy: Boolean = true) {
+
 //        Thread {
 
-        val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
-        StrictMode.setThreadPolicy(policy)
+        if (policy) {
+            val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+            StrictMode.setThreadPolicy(policy)
+        }
 
         var socket: DatagramSocket? = null
         try {
             socket = DatagramSocket()
-            socket.broadcast = true
+            socket.broadcast = true // No impact if not set, but disables it if set to false
 
-            Log.d("UDP", "datagramsocket broadcast: " + socket.broadcast)
+//            Log.d("UDP", "datagramsocket broadcast: " + socket.broadcast)
 
-            Log.d("UDP", "My adress : " + getLocalIP(context)!!.hostAddress)
+//            Log.d("UDP", "My adress : " + getLocalIP(context)!!.hostAddress)
 
-            Log.d("UDP", "Broadcast adresse : " + getBroadcast(getLocalIP(context)!!))
+//            Log.d("UDP", "Broadcast adresse : " + getBroadcast(getLocalIP(context)!!))
 
             val buffer = message.toByteArray()
 //                InetAddress.getByName("255.255.255.255") // Adresse de broadcast

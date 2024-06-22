@@ -32,24 +32,83 @@ class HostClient : Host() {
 
     val discoveredParties = flowOf<HostInstance>()
 
-    suspend fun startDiscovering(context: Context) {
+    fun startDiscovering(context: Context) {
 
+        unlockBroadcast()
+
+        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // samsungA20E receive  [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6], [samsungS20FE 1 2 3 4 5 6]
+        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
         Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
-        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
-        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
 
-        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
-        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
-        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
+        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 1 3 5] [huawei 1 & 2 3 5 ] [samsungS20FE 1 3 5]
+        // samsungA20E          receive [huawei 1 & 2 4 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
+        // samsungS20FE receive [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
+//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
 
-        lockBroadcast(context)
-        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
-        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
-        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
+        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
+        // samsungA20E          [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
+        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
+//        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
 
-        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
-        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
-        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
+        // huawei receive       [nothing 1 & 2 3 4 5 6] [samsungA20E 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
+        // nothing, receive     [samsungA20E 1 2 3 4 5 6 ] [huawei 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
+        // samsungA20E receive  [huawei 1 & 2 3 4 5 6] [Nothing 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
+        // samsungS20FE receive [huawei 1 & 2 3 4 5 6] [Nothing 1 & 2 3 4 5 6] [samsung A20E 1 & 2 3 4 5 6]
+//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
+
+        // huawei, receive      [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing, receive     [samsungA20E 1 3 5] [huawei 1 & 2 3 5] [samsungS20FE 1 3 5]
+        // samsungA20E receive  [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
+        // samsungS20FE receive [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
+//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
+
+        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
+        // samsungA20E receive  [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
+        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
+//        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
+
+//        lockBroadcast(context) // Necessary for next tests
+
+        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // samsungA20E          [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
+//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
+
+        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 1 3 5] [huawei 1 2 3 5] [samsungS20FE 1 3 5]
+        // samsungA20E          [huawei 1 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
+        // samsungS20FE receive [huawei 1 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
+//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
+
+        //huawei receive        [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
+        // samsungA20E          [huawei 4 6] [Nothing 2 4 6 ] [samsungS20FE 2 4 6]
+        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
+//        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
+
+        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // samsungA20E          receiving [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
+        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
+//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
+
+        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // nothing receive      [samsungA20E 1 3 5] [huawei 1 2 3 5] [samsungS20FE 1 3 5]
+        // samsungA20E receive  [huawei 1 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
+        // samsungS20FE receive [huawei 1 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
+//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
+
+        // huawei receiving     [nothing 1 3 5 ] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
+        // Nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
+        // samsungA20E          [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
+        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
+//        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
 
 
         /*        withContext(Dispatchers.IO) {
@@ -75,7 +134,7 @@ class HostClient : Host() {
         var socket: DatagramSocket? = null
         try {
             socket = DatagramSocket(8888, inetAddress) // Use the same port as the sender
-            socket.broadcast = true
+            socket.broadcast = true // works even at false
 
             while (true) {
                 val buffer = ByteArray(1024)

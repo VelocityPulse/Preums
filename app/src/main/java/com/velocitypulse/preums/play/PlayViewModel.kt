@@ -25,7 +25,8 @@ class PlayViewModel : ViewModel() {
         Log.i("debugPreums", "init PlayViewModel $this")
     }
 
-    fun onBuzzClick() {
+    fun onBuzzClick(context: Context) {
+        onResume(context)
     }
 
     fun onStartHostServer(context: Context) {

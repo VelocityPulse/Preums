@@ -2,16 +2,16 @@ package com.velocitypulse.preums.play.network
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.os.Build
+import android.net.wifi.WifiManager
 import android.system.OsConstants
 import android.util.Log
 import com.google.android.gms.security.ProviderInstaller
 import com.velocitypulse.preums.R
 import java.io.BufferedReader
 import java.io.BufferedWriter
-import java.io.FileDescriptor
-import java.io.FileInputStream
+import java.io.IOException
 import java.net.Inet4Address
+import java.net.Inet6Address
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.Socket
@@ -23,10 +23,11 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManagerFactory
 import kotlin.random.Random
 
-
 abstract class Host {
 
     companion object {
+
+        private var multicastLock: WifiManager.MulticastLock? = null
 
         @JvmStatic
         protected val KEY_NAME = "keystore.jks"
@@ -43,6 +44,16 @@ abstract class Host {
         @JvmStatic
         protected val KEY_ALGORITHM = "SunX509"
 
+        @JvmStatic
+        protected val NSD_NAME = "Preums"
+
+        /**
+         * The service type.
+         * It should be only on format "_name._communicationProtocol."
+         * _name._communicationprotocol.local." is not allowed
+         */
+        @JvmStatic
+        protected val NSD_TYPE = "_http._tcp."
 
         @JvmStatic
         protected val DISCOVERING_IP = "192.168.0.255"
@@ -52,7 +63,55 @@ abstract class Host {
 
         @JvmStatic
         protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
+
+        fun lockBroadcast(context: Context) {
+            try {
+                Log.i("debugPreums", "Starting Mutlicast Lock...")
+                val wifi = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                // get the device ip address
+                multicastLock = wifi.createMulticastLock(Host::class.java.name).apply {
+                    setReferenceCounted(true)
+                    acquire()
+                }
+                Log.i("debugPreums", "Starting ZeroConf probe....")
+            } catch (ex: IOException) {
+                Log.e("debugPreums", ex.message, ex)
+            }
+            Log.i("debugPreums", "Started ZeroConf probe....")
+        }
+
+        fun unlockBroadcast() {
+            multicastLock?.release()
+            Log.i("debugPreums", "Stopped Mutlicast Lock...")
+        }
+
+        @JvmStatic
+        protected fun getLocalIP(context: Context): Inet4Address? {
+            val manager =
+                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            val props = manager.getLinkProperties(manager.activeNetwork)
+
+            return props?.linkAddresses?.find {
+                it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
+            }?.address as Inet4Address?
+        }
+
+        @JvmStatic
+        protected fun getLocalIPv6(context: Context): Inet6Address? {
+            val manager =
+                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+            val props = manager.getLinkProperties(manager.activeNetwork)
+
+            return props?.linkAddresses?.find {
+                it.address is Inet6Address && it.flags == OsConstants.IFA_F_PERMANENT
+            }?.address as Inet6Address?
+        }
     }
+
+    abstract fun stopProcedures();
+
     protected fun getKeyStore(context: Context): KeyStore {
         val keyStore = KeyStore.getInstance("BKS")
 //        val keyStreamFd = context.resources.openRawResourceFd(R.raw.servercertbks)
@@ -69,7 +128,7 @@ abstract class Host {
     }
 
     protected fun getSecuredSocketFactory(context: Context): SSLContext {
-        ProviderInstaller.installIfNeeded(context);
+        ProviderInstaller.installIfNeeded(context)
 
         val keyStore = getKeyStore(context)
         return SSLContext.getInstance("TLS").apply {
@@ -84,14 +143,15 @@ abstract class Host {
         }
     }
 
-    protected fun getLocalIP(context: Context): Inet4Address? {
-        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    @Throws(IOException::class)
+    fun getBroadcastAddress(context: Context): InetAddress {
+        val dhcp = context.getSystemService(WifiManager::class.java).dhcpInfo
 
-        val props = manager.getLinkProperties(manager.activeNetwork)
 
-        return props?.linkAddresses?.find {
-            it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
-        }?.address as Inet4Address?
+        val broadcast = (dhcp.ipAddress and dhcp.netmask) or dhcp.netmask.inv()
+        val quads = ByteArray(4)
+        for (k in 0..3) quads[k] = ((broadcast shr k * 8) and 0xFF).toByte()
+        return InetAddress.getByAddress(quads)
     }
 
     protected fun getBroadcast(inet4Address: Inet4Address): InetAddress? {
@@ -118,12 +178,9 @@ abstract class Host {
         return this.getInputStream().bufferedReader()
     }
 
-
     fun Socket.openWriteChannel(): BufferedWriter {
         return this.getOutputStream().bufferedWriter()
     }
-
-
 }
 
 

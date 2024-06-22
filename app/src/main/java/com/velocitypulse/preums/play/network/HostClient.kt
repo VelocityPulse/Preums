@@ -1,10 +1,10 @@
 package com.velocitypulse.preums.play.network
 
 import android.content.Context
+import android.os.StrictMode
 import android.util.Log
 import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -16,7 +16,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import javax.jmdns.JmDNS
 import javax.jmdns.ServiceEvent
@@ -31,25 +33,77 @@ class HostClient : Host() {
     val discoveredParties = flowOf<HostInstance>()
 
     suspend fun startDiscovering(context: Context) {
-        withContext(Dispatchers.IO) {
 
-            discoveringJob?.cancel()
-            discoveringJob = CoroutineScope(coroutineContext).launch {
-                startDiscoveringMDNS(context).collect() {
-                    Log.d("Debug", "got instance: $it")
-                    contactServer(context, it)
-                }
+        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
+        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
+        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
+
+        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
+        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
+        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
+
+        lockBroadcast(context)
+        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
+        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
+        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
+
+        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
+        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
+        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
+
+
+        /*        withContext(Dispatchers.IO) {
+
+                    discoveringJob?.cancel()
+                    discoveringJob = CoroutineScope(coroutineContext).launch {
+                        startDiscoveringMDNS(context).collect() {
+                            Log.d("Debug", "got instance: $it")
+                            contactServer(context, it)
+                        }
+                    }
+                }*/
+    }
+
+    fun receiveBroadcast(inetAddress: InetAddress, threadPolicy: Boolean) {
+
+        if (threadPolicy) {
+            val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+            StrictMode.setThreadPolicy(policy)
+        }
+
+        Log.d("debugPreums", "Receiving broadcast...")
+        var socket: DatagramSocket? = null
+        try {
+            socket = DatagramSocket(8888, inetAddress) // Use the same port as the sender
+            socket.broadcast = true
+
+            while (true) {
+                val buffer = ByteArray(1024)
+                val packet = DatagramPacket(buffer, buffer.size)
+                Log.d("debugPreums", "Receive packet")
+                socket.receive(packet)
+
+                val message =
+                    String(packet.data, 0, packet.length)
+                Log.d("debugPreums", "Broadcast received: $message")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("debugPreums", "Receiving broadcast failed", e)
+        } finally {
+            if (socket != null && !socket.isClosed) {
+                socket.close()
             }
         }
     }
 
     private suspend fun startDiscoveringMDNS(context: Context): Flow<HostInstance> = callbackFlow {
         val jmdns = JmDNS.create()
-        Log.d("debug", "starting MDNS init");
+        Log.d("debug", "starting MDNS init")
 
         val listener = object : ServiceListener {
             override fun serviceAdded(event: ServiceEvent) {
-                Log.d("debug", "Service added: " + event.info);
+                Log.d("debug", "Service added: " + event.info)
             }
 
             override fun serviceRemoved(event: ServiceEvent) {
@@ -57,8 +111,9 @@ class HostClient : Host() {
 
             override fun serviceResolved(event: ServiceEvent) {
                 if (event.info.hasData() && event.info.textBytes.decodeToString()
-                        .contains(context.packageName)) {
-                    Log.d("debug", "Service resolved : $event");
+                        .contains(context.packageName)
+                ) {
+                    Log.d("debug", "Service resolved : $event")
                     trySend(
                         HostInstance(
                             ip = event.info.inet4Addresses.first().hostName,
@@ -111,4 +166,7 @@ class HostClient : Host() {
                 }
             }
         }
+
+    override fun stopProcedures() {
+    }
 }

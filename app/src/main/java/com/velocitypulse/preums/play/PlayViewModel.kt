@@ -46,13 +46,11 @@ class PlayViewModel : ViewModel() {
 
     fun onDestroy() {
         hostInstance?.stopProcedures()
-        Host.unlockBroadcast()
     }
 
     fun onPause() {
         Log.i("debugPreums", "onPause $hostInstance")
         hostInstance?.stopProcedures()
-        Host.unlockBroadcast()
     }
 
     fun onResume(context: Context) {

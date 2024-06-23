@@ -59,55 +59,29 @@ abstract class Host {
         protected val DISCOVERING_IP = "192.168.0.255"
 
         @JvmStatic
-        protected val DISCOVERING_PORT = 59002
+        protected val DISCOVERING_PORT = 8888
+    }
 
-        @JvmStatic
-        protected val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
+    protected fun getLocalIPv6(context: Context): Inet6Address? {
+        val manager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-        fun lockBroadcast(context: Context) {
-            try {
-                Log.i("debugPreums", "Starting Mutlicast Lock...")
-                val wifi = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                // get the device ip address
-                multicastLock = wifi.createMulticastLock(Host::class.java.name).apply {
-                    setReferenceCounted(true)
-                    acquire()
-                }
-                Log.i("debugPreums", "Starting ZeroConf probe....")
-            } catch (ex: IOException) {
-                Log.e("debugPreums", ex.message, ex)
-            }
-            Log.i("debugPreums", "Started ZeroConf probe....")
-        }
+        val props = manager.getLinkProperties(manager.activeNetwork)
 
-        fun unlockBroadcast() {
-            multicastLock?.release()
-            Log.i("debugPreums", "Stopped Mutlicast Lock...")
-        }
+        return props?.linkAddresses?.find {
+            it.address is Inet6Address && it.flags == OsConstants.IFA_F_PERMANENT
+        }?.address as Inet6Address?
+    }
 
-        @JvmStatic
-        protected fun getLocalIP(context: Context): Inet4Address? {
-            val manager =
-                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    protected fun getLocalIP(context: Context): Inet4Address? {
+        val manager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-            val props = manager.getLinkProperties(manager.activeNetwork)
+        val props = manager.getLinkProperties(manager.activeNetwork)
 
-            return props?.linkAddresses?.find {
-                it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
-            }?.address as Inet4Address?
-        }
-
-        @JvmStatic
-        protected fun getLocalIPv6(context: Context): Inet6Address? {
-            val manager =
-                context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-            val props = manager.getLinkProperties(manager.activeNetwork)
-
-            return props?.linkAddresses?.find {
-                it.address is Inet6Address && it.flags == OsConstants.IFA_F_PERMANENT
-            }?.address as Inet6Address?
-        }
+        return props?.linkAddresses?.find {
+            it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
+        }?.address as Inet4Address?
     }
 
     abstract fun stopProcedures();
@@ -141,16 +115,6 @@ abstract class Host {
             init(kmf.keyManagers, tmf.trustManagers, SecureRandom.getInstanceStrong())
 //            init(kmf.keyManagers, null, null)
         }
-    }
-
-    @Throws(IOException::class)
-    fun getBroadcastAddress(context: Context): InetAddress {
-        val dhcp = context.getSystemService(WifiManager::class.java).dhcpInfo
-
-        val broadcast = (dhcp.ipAddress and dhcp.netmask) or dhcp.netmask.inv()
-        val quads = ByteArray(4)
-        for (k in 0..3) quads[k] = ((broadcast shr k * 8) and 0xFF).toByte()
-        return InetAddress.getByAddress(quads)
     }
 
     protected fun getBroadcast(inet4Address: Inet4Address): InetAddress? {

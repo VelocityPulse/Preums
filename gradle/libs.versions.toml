@@ -1,7 +1,5 @@
 [versions]
 koin = "3.5.0"
-ktor = "2.3.6"
-jmdns = "3.5.8"
 coreKtx = "1.13.1"
 lifecycleRuntimeKtx = "2.8.1"
 activityCompose = "1.9.0"
@@ -25,8 +23,6 @@ uiToolingPreviewAndroid = "1.6.7" # replace with actual version if needed
 
 [libraries]
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
-ktor-network = { group = "io.ktor", name = "ktor-network", version.ref = "ktor" }
-jmdns = { group = "org.jmdns", name = "jmdns", version.ref = "jmdns" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

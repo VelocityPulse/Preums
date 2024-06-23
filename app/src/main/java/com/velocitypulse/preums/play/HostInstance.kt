@@ -1,6 +1,6 @@
 package com.velocitypulse.preums.play
 
-data class HostInstance(
+    data class HostInstance(
     val ip: String,
     val port: Int,
     var info: HostInfo?

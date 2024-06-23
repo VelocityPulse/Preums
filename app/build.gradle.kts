@@ -52,8 +52,6 @@ android {
 dependencies {
     implementation(libs.koin.androidx.compose)
 
-    implementation(libs.ktor.network)
-    implementation(libs.jmdns)
 
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)

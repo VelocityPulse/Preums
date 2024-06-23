@@ -1,31 +1,22 @@
 package com.velocitypulse.preums.play.network
 
 import android.content.Context
-import android.os.StrictMode
 import android.util.Log
 import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import javax.jmdns.JmDNS
-import javax.jmdns.ServiceEvent
-import javax.jmdns.ServiceListener
 
 class HostClient : Host() {
-//    private val clientSocket = Socket()
 
     private var discoveringJob: Job? = null
     private var connectionJob: Job? = null
@@ -34,160 +25,35 @@ class HostClient : Host() {
 
     fun startDiscovering(context: Context) {
 
-        unlockBroadcast()
-
-        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // samsungA20E receive  [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6], [samsungS20FE 1 2 3 4 5 6]
-        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
-        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
-
-        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 1 3 5] [huawei 1 & 2 3 5 ] [samsungS20FE 1 3 5]
-        // samsungA20E          receive [huawei 1 & 2 4 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
-        // samsungS20FE receive [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
-//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
-
-        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
-        // samsungA20E          [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
-        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
-//        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
-
-        // huawei receive       [nothing 1 & 2 3 4 5 6] [samsungA20E 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
-        // nothing, receive     [samsungA20E 1 2 3 4 5 6 ] [huawei 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
-        // samsungA20E receive  [huawei 1 & 2 3 4 5 6] [Nothing 1 & 2 3 4 5 6] [samsungS20FE 1 & 2 3 4 5 6]
-        // samsungS20FE receive [huawei 1 & 2 3 4 5 6] [Nothing 1 & 2 3 4 5 6] [samsung A20E 1 & 2 3 4 5 6]
-//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
-
-        // huawei, receive      [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing, receive     [samsungA20E 1 3 5] [huawei 1 & 2 3 5] [samsungS20FE 1 3 5]
-        // samsungA20E receive  [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
-        // samsungS20FE receive [huawei 1 & 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
-//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
-
-        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
-        // samsungA20E receive  [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
-        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
-//        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
-
-//        lockBroadcast(context) // Necessary for next tests
-
-        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // samsungA20E          [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
-//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), false) }.start()
-
-        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 1 3 5] [huawei 1 2 3 5] [samsungS20FE 1 3 5]
-        // samsungA20E          [huawei 1 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
-        // samsungS20FE receive [huawei 1 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
-//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, false) }.start()
-
-        //huawei receive        [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
-        // samsungA20E          [huawei 4 6] [Nothing 2 4 6 ] [samsungS20FE 2 4 6]
-        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
-//        Thread { receiveBroadcast(getBroadcastAddress(context), false) }.start()
-
-        // huawei receive       [nothing 1 2 3 4 5 6] [samsungA20E 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // nothing receive      [samsungA20E 1 2 3 4 5 6] [huawei 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // samsungA20E          receiving [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsungS20FE 1 2 3 4 5 6]
-        // samsungS20FE receive [huawei 1 2 3 4 5 6] [Nothing 1 2 3 4 5 6] [samsung A20E 1 2 3 4 5 6]
-//        Thread { receiveBroadcast(InetAddress.getByName("0.0.0.0"), true) }.start()
-
-        // huawei receive       [nothing 1 3 5] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // nothing receive      [samsungA20E 1 3 5] [huawei 1 2 3 5] [samsungS20FE 1 3 5]
-        // samsungA20E receive  [huawei 1 2 3 5] [Nothing 1 3 5] [samsungS20FE 1 3 5]
-        // samsungS20FE receive [huawei 1 2 3 5] [Nothing 1 3 5] [samsung A20E 1 3 5]
-//        Thread { receiveBroadcast(getBroadcast(getLocalIP(context)!!)!!, true) }.start()
-
-        // huawei receiving     [nothing 1 3 5 ] [samsungA20E 1 3 5] [samsungS20FE 1 3 5]
-        // Nothing receive      [samsungA20E 2 4 6] [huawei 4 6] [samsungS20FE 2 4 6]
-        // samsungA20E          [huawei 4 6] [Nothing 2 4 6] [samsungS20FE 2 4 6]
-        // samsungS20FE receive [huawei 4 6] [Nothing 2 4 6] [samsung A20E 2 4 6]
-//        Thread { receiveBroadcast(getBroadcastAddress(context), true) }.start()
-
-
-        /*        withContext(Dispatchers.IO) {
-
-                    discoveringJob?.cancel()
-                    discoveringJob = CoroutineScope(coroutineContext).launch {
-                        startDiscoveringMDNS(context).collect() {
-                            Log.d("Debug", "got instance: $it")
-                            contactServer(context, it)
-                        }
-                    }
-                }*/
+        Thread { receiveBroadcast() }.start()
     }
 
-    fun receiveBroadcast(inetAddress: InetAddress, threadPolicy: Boolean) {
+    private fun receiveBroadcast(): Flow<HostInstance> = callbackFlow {
+        Log.d("debugPreums", "receiveBroadcast")
 
-        if (threadPolicy) {
-            val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
-            StrictMode.setThreadPolicy(policy)
-        }
-
-        Log.d("debugPreums", "Receiving broadcast...")
         var socket: DatagramSocket? = null
         try {
-            socket = DatagramSocket(8888, inetAddress) // Use the same port as the sender
-            socket.broadcast = true // works even at false
+            socket = DatagramSocket(DISCOVERING_PORT, InetAddress.getByName("0.0.0.0"))
 
             while (true) {
                 val buffer = ByteArray(1024)
                 val packet = DatagramPacket(buffer, buffer.size)
-                Log.d("debugPreums", "Receive packet")
                 socket.receive(packet)
 
                 val message =
                     String(packet.data, 0, packet.length)
                 Log.d("debugPreums", "Broadcast received: $message")
+
+                message
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            Log.e("debugPreums", "Receiving broadcast failed", e)
         } finally {
             if (socket != null && !socket.isClosed) {
                 socket.close()
             }
         }
     }
-
-    private suspend fun startDiscoveringMDNS(context: Context): Flow<HostInstance> = callbackFlow {
-        val jmdns = JmDNS.create()
-        Log.d("debug", "starting MDNS init")
-
-        val listener = object : ServiceListener {
-            override fun serviceAdded(event: ServiceEvent) {
-                Log.d("debug", "Service added: " + event.info)
-            }
-
-            override fun serviceRemoved(event: ServiceEvent) {
-            }
-
-            override fun serviceResolved(event: ServiceEvent) {
-                if (event.info.hasData() && event.info.textBytes.decodeToString()
-                        .contains(context.packageName)
-                ) {
-                    Log.d("debug", "Service resolved : $event")
-                    trySend(
-                        HostInstance(
-                            ip = event.info.inet4Addresses.first().hostName,
-                            port = event.info.port,
-                            info = null
-                        )
-                    )
-                }
-            }
-        }
-        jmdns.addServiceListener("_http._tcp.local.", listener)
-        while (currentCoroutineContext().isActive) {
-            delay(500)
-        }
-    }.flowOn(Dispatchers.IO)
 
     private suspend fun contactServer(context: Context, hostInstance: HostInstance) =
         coroutineScope {

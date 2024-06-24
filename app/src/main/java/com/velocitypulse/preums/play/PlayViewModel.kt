@@ -39,7 +39,7 @@ class PlayViewModel : ViewModel() {
     fun onStartDiscovery(context: Context) {
         playState = PlayState.Discovering
         hostInstance = getKoinInstance<HostClient>().apply {
-            viewModelScope.launch { startDiscovering(context) }
+            viewModelScope.launch { startDiscovering() }
 //            synchronisedStartDiscovery(context)
         }
     }
@@ -60,7 +60,7 @@ class PlayViewModel : ViewModel() {
             }
 
             is PlayState.Discovering -> {
-                viewModelScope.launch { (hostInstance as HostClient).startDiscovering(context) }
+                viewModelScope.launch { (hostInstance as HostClient).startDiscovering() }
             }
 
             else -> {}

@@ -6,10 +6,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.velocitypulse.preums.play.HostInfo
 import com.velocitypulse.preums.play.HostInstance
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,6 +24,7 @@ import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
 import javax.net.ssl.SSLServerSocket
+import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
 
 class HostServer : Host() {
@@ -31,6 +37,7 @@ class HostServer : Host() {
 
     private val receivedSockets = mutableListOf<Socket>()
 
+    private var broadcastJob: Job? = null
 
     val hostInstances: Flow<HostInstance> = flow {
         while (true) {
@@ -38,7 +45,7 @@ class HostServer : Host() {
         }
     }
 
-    fun startServer(context: Context) {
+    suspend fun startServer(context: Context) {
         val address1 = getBroadcast(getLocalIP(context)!!)!!
         Log.d("debugPreums", "Broadcast sent to : ${address1.hostAddress}")
 
@@ -50,33 +57,38 @@ class HostServer : Host() {
 
         val message = Json.encodeToString(hostInstance)
 
-        sendBroadcast(message, address1)
-    }
-
-    private fun sendBroadcast(
-        message: String,
-        address: InetAddress,
-    ) {
-        var socket: DatagramSocket? = null
-        try {
-            socket = DatagramSocket()
-            socket.broadcast = true
-
-            val buffer = message.toByteArray()
-            val packet =
-                DatagramPacket(buffer, buffer.size, address, 8888) // Port 8888
-
-            socket.send(packet)
-            Log.d("UDP", "Broadcast sent: $message")
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-            Log.e("UDP", "Broadcast failed", e)
-        } finally {
-            if (socket != null && !socket.isClosed) {
-                socket.close()
-            }
+        broadcastJob?.cancel()
+        broadcastJob = CoroutineScope(coroutineContext).launch {
+            sendBroadcast(message, address1)
         }
     }
+
+    private suspend fun sendBroadcast(message: String, address: InetAddress) =
+        withContext(Dispatchers.IO) {
+            var socket: DatagramSocket? = null
+            try {
+                socket = DatagramSocket()
+                socket.broadcast = true
+
+                val buffer = message.toByteArray()
+                val packet =
+                    DatagramPacket(buffer, buffer.size, address, 8888) // Port 8888
+
+                while (isActive) {
+                    socket.send(packet)
+                    Log.d("UDP", "Broadcast sent: $message")
+
+                    delay(1000)
+                }
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+                Log.e("UDP", "Broadcast failed", e)
+            } finally {
+                if (socket != null && !socket.isClosed) {
+                    socket.close()
+                }
+            }
+        }
 
     private suspend fun startGameServer(context: Context) {
 
@@ -145,5 +157,6 @@ class HostServer : Host() {
     }
 
     override fun stopProcedures() {
+        broadcastJob?.cancel()
     }
 }

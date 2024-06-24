@@ -3,6 +3,7 @@ package com.velocitypulse.preums.play.network
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
+import android.provider.Settings
 import android.system.OsConstants
 import android.util.Log
 import com.google.android.gms.security.ProviderInstaller

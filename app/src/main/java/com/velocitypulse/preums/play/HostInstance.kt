@@ -10,6 +10,11 @@ data class HostInstance(
 )
 
 @Serializable
+data class HostClientInfo(
+    val name: String,
+)
+
+@Serializable
 data class HostInfo(
     val name: String,
     val playersCount: Int,

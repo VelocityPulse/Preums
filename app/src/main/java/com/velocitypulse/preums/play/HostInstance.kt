@@ -1,11 +1,15 @@
 package com.velocitypulse.preums.play
 
-    data class HostInstance(
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class HostInstance(
     val ip: String,
     val port: Int,
     var info: HostInfo?
 )
 
+@Serializable
 data class HostInfo(
     val name: String,
     val playersCount: Int,

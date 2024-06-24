@@ -1,6 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.serialization")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -39,9 +41,9 @@ android {
         compose = true
         viewBinding = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.14"
+//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -50,20 +52,19 @@ android {
 }
 
 dependencies {
-    implementation(libs.koin.androidx.compose)
-
-
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.constraintlayout.compose)
-
     implementation(libs.navigation.compose)
     implementation(libs.navigation.ui.ktx)
     implementation(libs.play.services.basement)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.ui.tooling.preview.android)
+
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.koin.androidx.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

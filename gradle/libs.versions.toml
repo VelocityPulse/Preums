@@ -1,13 +1,15 @@
 [versions]
+kotlin = "2.0.0"
 koin = "3.5.0"
 coreKtx = "1.13.1"
-lifecycleRuntimeKtx = "2.8.1"
+kotlinxSerializationJson = "1.7.0"
+lifecycleRuntimeKtx = "2.8.2"
 activityCompose = "1.9.0"
-composeBom = "2024.05.00"
-composeUi = "1.6.7" # replace with actual version if needed
-composeUiGraphics = "1.6.7" # replace with actual version if needed
-composeUiToolingPreview = "1.6.7" # replace with actual version if needed
-material3 = "1.2.1" # replace with actual version if needed
+composeBom = "2024.06.00"
+composeUi = "1.6.8"
+composeUiGraphics = "1.6.8"
+composeUiToolingPreview = "1.6.8"
+material3 = "1.2.1"
 constraintLayoutCompose = "1.1.0-alpha13"
 navigationCompose = "2.7.7"
 navigationUiKtx = "2.7.7"
@@ -15,15 +17,20 @@ playServicesBasement = "18.4.0"
 junit = "4.13.2"
 androidxJunit = "1.1.5"
 espressoCore = "3.5.1"
-composeUiTestJUnit4 = "1.6.7" # replace with actual version if needed
-composeUiTooling = "1.6.7" # replace with actual version if needed
-composeUiTestManifest = "1.6.7"
+composeUiTestJUnit4 = "1.6.8"
+composeUiTooling = "1.6.8"
+composeUiTestManifest = "1.6.8"
 material3Android = "1.2.1"
-uiToolingPreviewAndroid = "1.6.7" # replace with actual version if needed
+uiToolingPreviewAndroid = "1.6.8"
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [libraries]
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }

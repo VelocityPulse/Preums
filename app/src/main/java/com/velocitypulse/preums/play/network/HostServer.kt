@@ -11,6 +11,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -40,24 +42,21 @@ class HostServer : Host() {
         val address1 = getBroadcast(getLocalIP(context)!!)!!
         Log.d("debugPreums", "Broadcast sent to : ${address1.hostAddress}")
 
-
         val hostInstance = HostInstance(
             getLocalIP(context)!!.hostAddress!!,
             CONNECTION_PORT,
             null
         )
-        sendBroadcast(hostInstance.toString(), address1, context)
 
-        //        startGameServer(context)
+        val message = Json.encodeToString(hostInstance)
+
+        sendBroadcast(message, address1)
     }
 
-    fun sendBroadcast(
+    private fun sendBroadcast(
         message: String,
         address: InetAddress,
-        context: Context,
-        policy: Boolean = true
     ) {
-
         var socket: DatagramSocket? = null
         try {
             socket = DatagramSocket()

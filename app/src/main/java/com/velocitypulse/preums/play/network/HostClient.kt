@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -44,7 +45,8 @@ class HostClient : Host() {
                     String(packet.data, 0, packet.length)
                 Log.d("debugPreums", "Broadcast received: $message")
 
-                message
+                val hostInstance = Json.decodeFromString<HostInstance>(message)
+                Log.d("debugPreums", "HostInstance received: $hostInstance")
             }
         } catch (e: Exception) {
             e.printStackTrace()

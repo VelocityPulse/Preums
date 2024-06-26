@@ -1,25 +1,21 @@
 package com.velocitypulse.preums.play.network
 
-import android.content.Context
 import android.util.Log
 import com.velocitypulse.preums.core.di.ApplicationInitializer
-import com.velocitypulse.preums.play.HostClientInfo
-import com.velocitypulse.preums.play.HostInfo
-import com.velocitypulse.preums.play.HostInstance
+import com.velocitypulse.preums.play.ClientInfo
+import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.net.Socket
 
 class HostClient : Host() {
@@ -27,14 +23,14 @@ class HostClient : Host() {
     private var discoveringJob: Job? = null
     private var connectionJob: Job? = null
 
-    private val hostClientInfo = HostClientInfo(ApplicationInitializer.deviceName)
+    private val clientInfo = ClientInfo(ApplicationInitializer.deviceName)
 
 //    val discoveredParties = flowOf<HostInstance>()
 
-    suspend fun startDiscovering(context: Context) {
+    suspend fun startDiscovering() {
         receiveBroadcast().collect {
             Log.d("debugPreums", "finally got $it")
-            contactServer2(it)
+            requestInformation(it)
         }
     }
 
@@ -55,9 +51,9 @@ class HostClient : Host() {
                 Log.d("debugPreums", "Broadcast received: $message")
 
                 try {
-                    val hostInstance = Json.decodeFromString<HostInstance>(message)
-                    Log.d("debugPreums", "HostInstance received: $hostInstance")
-                    trySend(hostInstance)
+                    val serverInfo = Json.decodeFromString<ServerInfo>(message)
+                    Log.d("debugPreums", "HostInstance received: $serverInfo")
+                    trySend(serverInfo)
                 } catch (e: Exception) {
                     Log.w(
                         "debugPreums",
@@ -74,11 +70,11 @@ class HostClient : Host() {
         }
     }.flowOn(Dispatchers.IO)
 
-    private suspend fun contactServer2(hostInstance: HostInstance) {
+    private suspend fun requestInformation(serverInfo: ServerInfo) {
         withContext(Dispatchers.IO) {
             var socket: Socket? = null
             try {
-                socket = Socket(hostInstance.ip, hostInstance.port)
+                socket = Socket(serverInfo.ip, serverInfo.port)
 
                 val receiveChannel = socket.openReadChannel()
                 Log.d("debug", "receive channel opened")
@@ -86,11 +82,12 @@ class HostClient : Host() {
                 val sendChannel = socket.openWriteChannel()
                 Log.d("debug", "send channel opened")
 
-                val infoMessage = Json.encodeToString(hostClientInfo)
-                sendChannel.writeLine(infoMessage)
+                val infoMessage = Json.encodeToString(clientInfo)
+                delay(1000)
+                sendChannel.writeLine(infoMessage) // TODO : sending a line never received
                 Log.d(
                     "debugPreums",
-                    "Sent 'hello' to server at ${hostInstance.ip}:${hostInstance.port}"
+                    "Sent [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
                 )
 
                 val response = receiveChannel.readLine()
@@ -104,12 +101,12 @@ class HostClient : Host() {
         }
     }
 
-    private suspend fun contactServer(hostInstance: HostInstance) =
+/*    private suspend fun contactServer(hostInstance: HostInstance) =
         coroutineScope {
             launch(Dispatchers.IO) {
 
                 val socketFactory = getSecuredSocketFactory(context).socketFactory
-                socketFactory.createSocket()/*.use */.let { socket -> // TODO : put use
+                socketFactory.createSocket()*//*.use *//*.let { socket -> // TODO : put use
 
                     Log.d("debug", "Starting contact socket")
                     // TODO : handle ConnectException
@@ -139,7 +136,7 @@ class HostClient : Host() {
 //                    Log.d("debug", "Contact established: $hostInfo")
                 }
             }
-        }
+        }*/
 
     override fun stopProcedures() {
     }

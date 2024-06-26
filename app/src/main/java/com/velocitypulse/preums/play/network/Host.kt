@@ -28,8 +28,6 @@ abstract class Host {
 
     companion object {
 
-        private var multicastLock: WifiManager.MulticastLock? = null
-
         @JvmStatic
         protected val KEY_NAME = "keystore.jks"
 
@@ -44,20 +42,6 @@ abstract class Host {
 
         @JvmStatic
         protected val KEY_ALGORITHM = "SunX509"
-
-        @JvmStatic
-        protected val NSD_NAME = "Preums"
-
-        /**
-         * The service type.
-         * It should be only on format "_name._communicationProtocol."
-         * _name._communicationprotocol.local." is not allowed
-         */
-        @JvmStatic
-        protected val NSD_TYPE = "_http._tcp."
-
-        @JvmStatic
-        protected val DISCOVERING_IP = "192.168.0.255"
 
         @JvmStatic
         protected val DISCOVERING_PORT = 8888

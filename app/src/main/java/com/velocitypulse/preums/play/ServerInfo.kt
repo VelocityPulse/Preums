@@ -3,19 +3,19 @@ package com.velocitypulse.preums.play
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class HostInstance(
+data class ServerInfo(
     val ip: String,
     val port: Int,
-    var info: HostInfo?
+    var info: InstanceInfo?
 )
 
 @Serializable
-data class HostClientInfo(
+data class ClientInfo(
     val name: String,
 )
 
 @Serializable
-data class HostInfo(
+data class InstanceInfo(
     val name: String,
     val playersCount: Int,
     val isLocked: Boolean,

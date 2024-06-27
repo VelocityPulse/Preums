@@ -105,6 +105,7 @@ class HostServer : Host() {
     private suspend fun startServerInfo() = withContext(Dispatchers.IO) {
         Log.d("debugPreums", "Server starting on port $CONNECTION_PORT")
 
+
         val serverSocket = ServerSocket(CONNECTION_PORT)
 
         try {
@@ -112,6 +113,7 @@ class HostServer : Host() {
                 Log.d("debugPreums", "Waiting for incoming connections...")
                 val clientSocket = serverSocket.accept()
 
+                DatagramSocket()
                 launch {
                     Log.d(
                         "debugPreums",
@@ -132,11 +134,10 @@ class HostServer : Host() {
     private suspend fun handleClient(clientSocket: Socket) {
         withContext(Dispatchers.IO) {
             try {
-                val receiveChannel = clientSocket.openReadChannel()
-                val sendChannel = clientSocket.openWriteChannel()
+                val comHelper = ComHelper(clientSocket)
                 Log.d("debugPreums", "channels opened")
 
-                val message = receiveChannel.readLine() // TODO never receiving the line
+                val message = comHelper.readLineAcknowledged()
                 Log.d("debugPreums","Received message: $message")
 
                 try {
@@ -152,7 +153,7 @@ class HostServer : Host() {
                         password = null
                     )
 
-                    sendChannel.writeLine(Json.encodeToString(infoInstance))
+                    comHelper.writeLineAcknowledged(Json.encodeToString(infoInstance))
                 } catch (e: Exception) {
                     throw IllegalArgumentException("Received message : $message")
                 }
@@ -185,7 +186,8 @@ class HostServer : Host() {
             // verifier si les certificats sont bien ajoutés
             // par exemple dans le turst store ou autre
 
-            val receiveChannel = clientSocket.openReadChannel()
+//            val receiveChannel = clientSocket.openReadChannel()
+
             /*
                         val receiveChannel = clientSocket.getInputStream().let {
                             Log.d("debug", "a")
@@ -212,7 +214,7 @@ class HostServer : Host() {
                         )*/
 
 
-            val sendChannel = clientSocket.openWriteChannel()
+//            val sendChannel = clientSocket.openWriteChannel()
             Log.d("debug", "send channel opened")
 
 
@@ -224,10 +226,10 @@ class HostServer : Host() {
                 password = null
             )
 
-            sendChannel.writeLine(infoInstance.name)
-            sendChannel.writeLine(infoInstance.playersCount.toString())
-            sendChannel.writeLine(infoInstance.isLocked.toString())
-            sendChannel.writeLine(infoInstance.primaryColor.toString())
+//            sendChannel.writeLine(infoInstance.name)
+//            sendChannel.writeLine(infoInstance.playersCount.toString())
+//            sendChannel.writeLine(infoInstance.isLocked.toString())
+//            sendChannel.writeLine(infoInstance.primaryColor.toString())
             Log.d("debug", "Info sent")
         }
     }

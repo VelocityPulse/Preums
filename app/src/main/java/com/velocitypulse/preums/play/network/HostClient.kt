@@ -6,7 +6,6 @@ import com.velocitypulse.preums.play.ClientInfo
 import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
@@ -25,7 +24,7 @@ class HostClient : Host() {
 
     private val clientInfo = ClientInfo(ApplicationInitializer.deviceName)
 
-//    val discoveredParties = flowOf<HostInstance>()
+    val discoveredServers = mutableSetOf<ServerInfo>()
 
     suspend fun startDiscovering() {
         receiveBroadcast().collect {
@@ -53,7 +52,9 @@ class HostClient : Host() {
                 try {
                     val serverInfo = Json.decodeFromString<ServerInfo>(message)
                     Log.d("debugPreums", "HostInstance received: $serverInfo")
-                    trySend(serverInfo)
+                    if (discoveredServers.add(serverInfo)) {
+                        trySend(serverInfo)
+                    }
                 } catch (e: Exception) {
                     Log.w(
                         "debugPreums",
@@ -78,23 +79,19 @@ class HostClient : Host() {
                 socket = Socket(serverInfo.ip, serverInfo.port)
                 Log.d("debug", "socket opened")
 
-                val receiveChannel = socket.openReadChannel()
-                Log.d("debug", "receive channel opened")
-
-                val sendChannel = socket.openWriteChannel()
-                Log.d("debug", "send channel opened")
+                val comHelper = ComHelper(socket)
 
                 val infoMessage = Json.encodeToString(clientInfo)
-//                delay(1000)
-                while (true) {
-                    sendChannel.writeLine(infoMessage) // TODO : sending a line never received
-                }
+
+                comHelper.writeLineAcknowledged(infoMessage)
+
                 Log.d(
                     "debugPreums",
                     "Sent [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
                 )
 
-                val response = receiveChannel.readLine()
+                val response = comHelper.readLineAcknowledged()
+
                 Log.d("debugPreums", "Received response from server: $response")
             } catch (e: Exception) {
                 Log.e("debugPreums", "Failed to contact server: ${e.message}")
@@ -105,12 +102,12 @@ class HostClient : Host() {
         }
     }
 
-/*    private suspend fun contactServer(hostInstance: HostInstance) =
-        coroutineScope {
-            launch(Dispatchers.IO) {
+    /*    private suspend fun contactServer(hostInstance: HostInstance) =
+            coroutineScope {
+                launch(Dispatchers.IO) {
 
-                val socketFactory = getSecuredSocketFactory(context).socketFactory
-                socketFactory.createSocket()*//*.use *//*.let { socket -> // TODO : put use
+                    val socketFactory = getSecuredSocketFactory(context).socketFactory
+                    socketFactory.createSocket()*//*.use *//*.let { socket -> // TODO : put use
 
                     Log.d("debug", "Starting contact socket")
                     // TODO : handle ConnectException

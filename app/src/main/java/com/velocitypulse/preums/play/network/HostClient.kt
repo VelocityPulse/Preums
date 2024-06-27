@@ -74,7 +74,9 @@ class HostClient : Host() {
         withContext(Dispatchers.IO) {
             var socket: Socket? = null
             try {
+                Log.d("debug", "open socket")
                 socket = Socket(serverInfo.ip, serverInfo.port)
+                Log.d("debug", "socket opened")
 
                 val receiveChannel = socket.openReadChannel()
                 Log.d("debug", "receive channel opened")
@@ -83,8 +85,10 @@ class HostClient : Host() {
                 Log.d("debug", "send channel opened")
 
                 val infoMessage = Json.encodeToString(clientInfo)
-                delay(1000)
-                sendChannel.writeLine(infoMessage) // TODO : sending a line never received
+//                delay(1000)
+                while (true) {
+                    sendChannel.writeLine(infoMessage) // TODO : sending a line never received
+                }
                 Log.d(
                     "debugPreums",
                     "Sent [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"

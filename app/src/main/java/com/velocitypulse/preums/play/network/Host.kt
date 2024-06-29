@@ -4,13 +4,9 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.system.OsConstants
 import android.util.Log
-import com.google.android.gms.security.ProviderInstaller
-import com.velocitypulse.preums.R
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.io.BufferedReader
@@ -21,31 +17,15 @@ import java.net.InetAddress
 import java.net.NetworkInterface
 import java.net.Socket
 import java.net.SocketException
-import java.security.KeyStore
-import java.security.SecureRandom
-import javax.net.ssl.KeyManagerFactory
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManagerFactory
-import kotlin.jvm.Throws
+
+private const val TAG = "Host"
 
 abstract class Host {
 
     companion object {
 
         @JvmStatic
-        protected val KEY_NAME = "keystore.jks"
-
-        @JvmStatic
         protected val KEY_PASS = "123456"
-
-        @JvmStatic
-        protected val KEY_INSTANCE_TYPE = "PKCS12"
-
-        @JvmStatic
-        protected val SSL_PROTOCOL = "TLS"
-
-        @JvmStatic
-        protected val KEY_ALGORITHM = "SunX509"
 
         @JvmStatic
         protected val DISCOVERING_PORT = 8888
@@ -73,37 +53,6 @@ abstract class Host {
 
     abstract fun stopProcedures()
 
-    protected fun getKeyStore(context: Context): KeyStore {
-        val keyStore = KeyStore.getInstance("BKS")
-//        val keyStreamFd = context.resources.openRawResourceFd(R.raw.servercertbks)
-//        val keyStream = FileInputStream(keyStreamFd.fileDescriptor)
-        val keyStream = context.resources.openRawResource(R.raw.servercertbks)
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-//            Log.d("debug", keyStream.readAllBytes().contentToString())
-//        }
-
-        keyStore.load(keyStream, KEY_PASS.toCharArray())
-
-        return keyStore
-    }
-
-    protected fun getSecuredSocketFactory(context: Context): SSLContext {
-        ProviderInstaller.installIfNeeded(context)
-
-        val keyStore = getKeyStore(context)
-        return SSLContext.getInstance("TLS").apply {
-            val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
-            kmf.init(keyStore, KEY_PASS.toCharArray())
-
-            val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
-            tmf.init(keyStore)
-
-            init(kmf.keyManagers, tmf.trustManagers, SecureRandom.getInstanceStrong())
-//            init(kmf.keyManagers, null, null)
-        }
-    }
-
     protected fun getBroadcast(inet4Address: Inet4Address): InetAddress? {
         val temp: NetworkInterface
         var inetBroadcast: InetAddress? = null
@@ -111,43 +60,25 @@ abstract class Host {
             temp = NetworkInterface.getByInetAddress(inet4Address)
             val addresses = temp.interfaceAddresses
             for (inetAddress in addresses) inetBroadcast = inetAddress.broadcast
-            Log.d("debug", "iAddr=$inetBroadcast")
             return inetBroadcast
         } catch (e: SocketException) {
             e.printStackTrace()
-            Log.d("debug", "getBroadcast" + e.message)
         }
         return null
     }
-
-
-//    protected fun BufferedWriter.writeLineAcknowledged(timeout: Long = 1000, message: String) {
-//        do {
-//            sendChannel.writeLine(infoMessage)
-//        } while (receiveChannel.waitAcknowledge())
-//    }
-//
-//    protected suspend fun BufferedReader.waitAcknowledge(timeout: Long = 1000): Boolean {
-//        return withTimeout(timeout) {
-//            readlnOrNull() == "ACK"
-//        }
-//    }
-//
-//    protected suspend fun BufferedWriter.sendAcknowledgment() {
-//        writeLine("ACK")
-//    }
 
     protected open class ComHelper(socket: Socket) {
 
         companion object {
             private const val ACKNOWLEDGE = "ACK"
+            private const val TAG = "ComHelper"
         }
 
         private val receiveChannel: BufferedReader = socket.openReadChannel()
         private val sendChannel: BufferedWriter = socket.openWriteChannel()
 
         init {
-            Log.d("preumsDebug", "socket: $socket")
+            Log.i(TAG, "ComHelper with socket: $socket")
         }
 
         private fun Socket.openReadChannel(): BufferedReader {
@@ -158,55 +89,51 @@ abstract class Host {
             return this.getOutputStream().bufferedWriter()
         }
 
-        fun BufferedWriter.writeLine(message: String) {
+        private fun BufferedWriter.writeLine(message: String) {
             write(message + System.lineSeparator())
             flush()
         }
 
         private suspend fun BufferedReader.waitAcknowledged(timeout: Long): Boolean {
-            Log.d("preumsDebug", "Entering waitAcknowledgedfunction")
             return try {
                 withTimeout(timeout) {
-                    Log.d("preumsDebug", "Started timeout block")
                     while (isActive) {
                         if (this@waitAcknowledged.ready()) {
                             val line = this@waitAcknowledged.readLine()
-                            Log.d("preumsDebug", "Read line: $line")
                             if (line == ACKNOWLEDGE) {
-                                Log.d("preumsDebug", "Acknowledgement received")
+                                Log.i(TAG, "Acknowledgement received")
                                 return@withTimeout true
+                            } else {
+                                Log.i(TAG, "Not acknowledged, received $line")
                             }
                         } else {
-                            Log.d("preumsDebug", "Not ready, waiting...")
+                            Log.i(TAG, "Waiting ACK...")
                         }
-                        delay(150)
+                        delay(100)
                     }
-                    Log.d("preumsDebug", "Timeout reached without acknowledgement")
+                    Log.i(TAG, "Timeout reached without acknowledgement")
                     false
                 }
             } catch (e: Exception) {
-                Log.w("preumsDebug", "Error in waitAcknowledged: ${e.message}")
+                Log.w(TAG, "Error in waitAcknowledged: ${e.stackTraceToString()}")
                 false
             }
         }
 
-        suspend fun writeLineAcknowledged(message: String, sendingFrequency: Long = 1000) =
+        suspend fun writeLineACK(message: String, sendingFrequency: Long = 1000) =
             withContext(Dispatchers.IO) {
                 do {
-                    Log.d("preumsDebug", "sending acknowledged [$message]")
+                    Log.i(TAG, "Write line ACK [$message]")
                     sendChannel.writeLine(message)
                 } while (!receiveChannel.waitAcknowledged(sendingFrequency))
             }
 
-        suspend fun readLineAcknowledged(): String = withContext(Dispatchers.IO) {
-            Log.d("preumsDebug", "Entering readLineAcknowledged")
-
+        suspend fun readLineACK(): String = withContext(Dispatchers.IO) {
+            Log.i(TAG, "Read line ACK")
             while (!receiveChannel.ready()) {
-                Log.d("preumsDebug", "Not ready, waiting...")
                 delay(150)
             }
 
-            Log.d("preumsDebug", "Ready, reading line")
             receiveChannel.readLine().also {
                 sendChannel.writeLine(ACKNOWLEDGE)
             }

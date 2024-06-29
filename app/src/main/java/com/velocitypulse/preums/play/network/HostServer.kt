@@ -24,15 +24,13 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.ServerSocket
 import java.net.Socket
-import javax.net.ssl.SSLServerSocket
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
 
-class HostServer : Host() {
+private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
+private const val TAG = "HostServer"
 
-    companion object {
-        private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
-    }
+class HostServer : Host() {
 
 //    private val serverSocket = ServerSocket()
 
@@ -68,7 +66,7 @@ class HostServer : Host() {
 
     private suspend fun startSendBroadcast(context: Context) = withContext(Dispatchers.IO) {
         val address = getBroadcast(getLocalIP(context)!!)!!
-        Log.d("debugPreums", "Broadcast sent to : $address")
+        Log.i(TAG, "Broadcast sent to : $address")
 
         val serverInfo = ServerInfo(
             getLocalIP(context)!!.hostAddress!!,
@@ -88,12 +86,12 @@ class HostServer : Host() {
 
             while (isActive) {
                 socket.send(packet)
-                Log.d("UDP", "Broadcast sent $address: $message")
+                Log.i(TAG, "Broadcast sent $address: $message")
                 delay(1000)
             }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
-            Log.e("UDP", "Broadcast failed", e)
+            Log.e(TAG, "Broadcast failed", e)
         } finally {
             if (socket != null && !socket.isClosed) {
                 socket.close()
@@ -102,137 +100,65 @@ class HostServer : Host() {
     }
 
     private suspend fun startServerInfo() = withContext(Dispatchers.IO) {
-        Log.d("debugPreums", "Server starting on port $CONNECTION_PORT")
+        Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
         val serverSocket = ServerSocket(CONNECTION_PORT)
-
-
         try {
             while (isActive) {
-                Log.d("debugPreums", "Waiting for incoming connections...")
+                Log.i(TAG, "Waiting for incoming connections...")
                 val clientSocket = serverSocket.accept()
 
                 launch {
-                    Log.d(
-                        "debugPreums",
-                        "Client connected: ${clientSocket.inetAddress.hostAddress}"
-                    )
+                    Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
                     handleClient(clientSocket)
                 }
             }
         } catch (e: Exception) {
-            Log.e("debugPreums", "Server error: ${e.message}")
+            Log.e(TAG, "Server error: ${e.message}")
             e.printStackTrace()
         } finally {
             serverSocket.close()
-            Log.d("debugPreums", "Server socket closed")
+            Log.i(TAG, "Server socket closed")
         }
     }
 
     private suspend fun handleClient(clientSocket: Socket) {
+        Log.i(TAG, "Handling client")
         withContext(Dispatchers.IO) {
+            val comHelper = ComHelper(clientSocket)
+
+            Log.i(TAG, "Waiting for client info...")
+            val message = comHelper.readLineACK()
+            Log.i(TAG, "Client info received: $message")
+
             try {
-                val comHelper = ComHelper(clientSocket)
-                Log.d("debugPreums", "channels opened")
+                val clientInfo = Json.decodeFromString<ClientInfo>(message)
 
-                val message = comHelper.readLineAcknowledged()
-                Log.d("debugPreums","Received message: $message")
+                _discoveredHostSharedFlow.value += clientInfo
 
-                try {
-                    val clientInfo = Json.decodeFromString<ClientInfo>(message)
+                val infoInstance = InstanceInfo(
+                    name = "partie1",
+                    playersCount = 5,
+                    isLocked = false,
+                    primaryColor = Color.Blue.toArgb(),
+                    password = null
+                )
 
-                    _discoveredHostSharedFlow.value += clientInfo
-
-                    val infoInstance = InstanceInfo(
-                        name = "partie1",
-                        playersCount = 5,
-                        isLocked = false,
-                        primaryColor = Color.Blue.toArgb(),
-                        password = null
-                    )
-
-                    comHelper.writeLineAcknowledged(Json.encodeToString(infoInstance))
-                } catch (e: Exception) {
-                    throw IllegalArgumentException("Received message : $message")
-                }
-
+                comHelper.writeLineACK(Json.encodeToString(infoInstance))
             } catch (e: Exception) {
-                Log.d("debugPreums","Error handling client: ${e.message}")
-                e.printStackTrace()
+                Log.e(
+                    TAG,
+                    "Error decoding client info: ${e.message} ${e.stackTraceToString()}"
+                )
             } finally {
                 clientSocket.close()
             }
         }
     }
 
-    private suspend fun startGameServer(context: Context) {
-
-        withContext(Dispatchers.IO) {
-            Log.d("debug", "Starting game server")
-            val serverSocketFactory = getSecuredSocketFactory(context).serverSocketFactory
-            val serverSocket =
-                serverSocketFactory.createServerSocket(Companion.CONNECTION_PORT) as SSLServerSocket
-            serverSocket.enabledCipherSuites = serverSocket.supportedCipherSuites
-            serverSocket.needClientAuth = true
-            serverSocket.enabledProtocols = listOf("TLSv1.2").toTypedArray()
-            Log.d("debug", "trying to accept contact")
-            val clientSocket = serverSocket.accept()
-            Log.d("debug", "Contact accepted")
-
-            // TODO :
-            // quand le serveur et le client ouvrent leurs channel, ca crash
-            // verifier si les certificats sont bien ajoutés
-            // par exemple dans le turst store ou autre
-
-//            val receiveChannel = clientSocket.openReadChannel()
-
-            /*
-                        val receiveChannel = clientSocket.getInputStream().let {
-                            Log.d("debug", "a")
-                            BufferedInputStream(it, 1024).let {
-                                Log.d("debug", "b")
-                                InputStreamReader(it).let {
-                                    Log.d("debug", "c")
-                                    BufferedReader(it)
-                                }
-                            }
-                        }
-                        Log.d("debug", "received " + receiveChannel.readLine())
-            */
-
-            Log.d("debug", "receive channel opened")
-
-
-            /*            val sendChannel = BufferedWriter(
-                            OutputStreamWriter(
-                                BufferedOutputStream(
-                                    clientSocket.getOutputStream(), 1024
-                                )
-                            )
-                        )*/
-
-
-//            val sendChannel = clientSocket.openWriteChannel()
-            Log.d("debug", "send channel opened")
-
-
-            val infoInstance = InstanceInfo(
-                name = "partie1",
-                playersCount = 5,
-                isLocked = false,
-                primaryColor = Color.Blue.toArgb(),
-                password = null
-            )
-
-//            sendChannel.writeLine(infoInstance.name)
-//            sendChannel.writeLine(infoInstance.playersCount.toString())
-//            sendChannel.writeLine(infoInstance.isLocked.toString())
-//            sendChannel.writeLine(infoInstance.primaryColor.toString())
-            Log.d("debug", "Info sent")
-        }
-    }
-
     override fun stopProcedures() {
+        Log.i(TAG, "Stopping procedures")
         broadcastJob?.cancel()
+        serverInfoJob?.cancel()
     }
 }

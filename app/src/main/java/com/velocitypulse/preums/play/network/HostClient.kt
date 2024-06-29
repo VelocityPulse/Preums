@@ -6,7 +6,6 @@ import com.velocitypulse.preums.play.ClientInfo
 import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
@@ -18,6 +17,8 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
 
+private const val TAG = "HostClient"
+
 class HostClient : Host() {
 
     private var discoveringJob: Job? = null
@@ -25,17 +26,16 @@ class HostClient : Host() {
 
     private val clientInfo = ClientInfo(ApplicationInitializer.deviceName)
 
-    val discoveredServers = mutableSetOf<ServerInfo>()
+    private val discoveredServers = mutableSetOf<ServerInfo>()
 
     suspend fun startDiscovering() {
         receiveBroadcast().collect {
-            Log.d("debugPreums", "finally got $it")
             requestInformation(it)
         }
     }
 
     private fun receiveBroadcast() = callbackFlow {
-        Log.d("debugPreums", "receiveBroadcast")
+        Log.i(TAG, "Starting broadcast")
 
         var socket: DatagramSocket? = null
         try {
@@ -48,18 +48,19 @@ class HostClient : Host() {
 
                 val message =
                     String(packet.data, 0, packet.length)
-                Log.d("debugPreums", "Broadcast received: $message")
+                Log.i(TAG, "Broadcast received: $message")
 
                 try {
                     val serverInfo = Json.decodeFromString<ServerInfo>(message)
-                    Log.d("debugPreums", "HostInstance received: $serverInfo")
+                    Log.i(TAG, "HostInstance received: $serverInfo")
                     if (discoveredServers.add(serverInfo)) {
                         trySend(serverInfo)
-                        cancel() // TODO : remove for more phones
+                    } else {
+                        Log.w(TAG, "Duplicated host instance: $serverInfo")
                     }
                 } catch (e: Exception) {
                     Log.w(
-                        "debugPreums",
+                        TAG,
                         "Failed to decode host instance " + Exception(e).stackTraceToString()
                     )
                 }
@@ -75,71 +76,33 @@ class HostClient : Host() {
 
     private suspend fun requestInformation(serverInfo: ServerInfo) {
         withContext(Dispatchers.IO) {
+            Log.i(TAG, "Connecting to server at ${serverInfo.ip}:${serverInfo.port}")
+
             var socket: Socket? = null
             try {
-                Log.d("debug", "open socket")
                 socket = Socket(serverInfo.ip, serverInfo.port)
-                Log.d("debug", "socket opened")
+                Log.i(TAG, "socket opened")
 
                 val comHelper = ComHelper(socket)
-
                 val infoMessage = Json.encodeToString(clientInfo)
 
-                comHelper.writeLineAcknowledged(infoMessage)
-
-                Log.d(
-                    "debugPreums",
-                    "Sent [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
+                Log.i(
+                    TAG,
+                    "Sending [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
                 )
+                comHelper.writeLineACK(infoMessage)
+                val response = comHelper.readLineACK()
 
-                val response = comHelper.readLineAcknowledged()
-
-                Log.d("debugPreums", "Received response from server: $response")
+                Log.i(TAG, "Received response from server: $response")
+                // TODO : Continue here
             } catch (e: Exception) {
-                Log.e("debugPreums", "Failed to contact server: ${e.message}")
+                Log.e(TAG, "Failed to contact server: ${e.message}")
                 e.printStackTrace()
             } finally {
                 socket?.close()
             }
         }
     }
-
-    /*    private suspend fun contactServer(hostInstance: HostInstance) =
-            coroutineScope {
-                launch(Dispatchers.IO) {
-
-                    val socketFactory = getSecuredSocketFactory(context).socketFactory
-                    socketFactory.createSocket()*//*.use *//*.let { socket -> // TODO : put use
-
-                    Log.d("debug", "Starting contact socket")
-                    // TODO : handle ConnectException
-                    socket.connect(InetSocketAddress(hostInstance.ip, hostInstance.port))
-                    Log.d("debug", "Contact socket connected")
-
-                    val receiveChannel = socket.openReadChannel()
-                    Log.d("debug", "receive channel opened")
-
-                    val sendChannel = socket.openWriteChannel()
-                    Log.d("debug", "send channel opened")
-
-                    Log.d("debug", "reading one debug line : " + receiveChannel.readLine())
-
-//                    sendChannel.writeLine("test")
-
-//                    while(true) delay(500)
-
-                    val hostInfo = HostInfo(
-                        name = receiveChannel.readLine()!!,
-                        playersCount = receiveChannel.readLine()!!.toInt(),
-                        isLocked = receiveChannel.readLine()!!.toBoolean(),
-                        password = null,
-                        primaryColor = receiveChannel.readLine()!!.toInt()
-                    )
-
-//                    Log.d("debug", "Contact established: $hostInfo")
-                }
-            }
-        }*/
 
     override fun stopProcedures() {
     }

@@ -6,6 +6,7 @@ import com.velocitypulse.preums.play.ClientInfo
 import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
@@ -54,6 +55,7 @@ class HostClient : Host() {
                     Log.d("debugPreums", "HostInstance received: $serverInfo")
                     if (discoveredServers.add(serverInfo)) {
                         trySend(serverInfo)
+                        cancel() // TODO : remove for more phones
                     }
                 } catch (e: Exception) {
                     Log.w(

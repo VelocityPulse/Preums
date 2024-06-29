@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 data class ServerInfo(
     val ip: String,
     val port: Int,
-    var info: InstanceInfo?
 )
 
 @Serializable

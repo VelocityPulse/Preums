@@ -146,6 +146,10 @@ abstract class Host {
         private val receiveChannel: BufferedReader = socket.openReadChannel()
         private val sendChannel: BufferedWriter = socket.openWriteChannel()
 
+        init {
+            Log.d("preumsDebug", "socket: $socket")
+        }
+
         private fun Socket.openReadChannel(): BufferedReader {
             return this.getInputStream().bufferedReader()
         }
@@ -156,39 +160,55 @@ abstract class Host {
 
         fun BufferedWriter.writeLine(message: String) {
             write(message + System.lineSeparator())
+            flush()
         }
 
         private suspend fun BufferedReader.waitAcknowledged(timeout: Long): Boolean {
-            try {
-                return withTimeout(timeout) {
+            Log.d("preumsDebug", "Entering waitAcknowledgedfunction")
+            return try {
+                withTimeout(timeout) {
+                    Log.d("preumsDebug", "Started timeout block")
                     while (isActive) {
-                        if (this@waitAcknowledged.ready() && this@waitAcknowledged.readLine() == ACKNOWLEDGE) {
-                            return@withTimeout true
+                        if (this@waitAcknowledged.ready()) {
+                            val line = this@waitAcknowledged.readLine()
+                            Log.d("preumsDebug", "Read line: $line")
+                            if (line == ACKNOWLEDGE) {
+                                Log.d("preumsDebug", "Acknowledgement received")
+                                return@withTimeout true
+                            }
+                        } else {
+                            Log.d("preumsDebug", "Not ready, waiting...")
                         }
-                        delay(50)
+                        delay(150)
                     }
+                    Log.d("preumsDebug", "Timeout reached without acknowledgement")
                     false
-                }.also {
-                    Log.d("preumsDebug", "Leaving acknowlegment check with $it")
                 }
             } catch (e: Exception) {
-//                Log.d("preumsDebug", "Leaving waitAcknowledged ${e.message}")
+                Log.w("preumsDebug", "Error in waitAcknowledged: ${e.message}")
+                false
             }
-            return false
         }
 
-        suspend fun writeLineAcknowledged(message: String, sendingFrequency: Long = 1000) {
-            do {
-                Log.d("preumsDebug", "sending acknowledged [$message]")
-                sendChannel.writeLine(message)
-            } while (!receiveChannel.waitAcknowledged(sendingFrequency))
-        }
+        suspend fun writeLineAcknowledged(message: String, sendingFrequency: Long = 1000) =
+            withContext(Dispatchers.IO) {
+                do {
+                    Log.d("preumsDebug", "sending acknowledged [$message]")
+                    sendChannel.writeLine(message)
+                } while (!receiveChannel.waitAcknowledged(sendingFrequency))
+            }
 
-        suspend fun readLineAcknowledged(): String {
-            return withContext(Dispatchers.IO) {
-                receiveChannel.readLine().also {
-                    sendChannel.writeLine(ACKNOWLEDGE)
-                }
+        suspend fun readLineAcknowledged(): String = withContext(Dispatchers.IO) {
+            Log.d("preumsDebug", "Entering readLineAcknowledged")
+
+            while (!receiveChannel.ready()) {
+                Log.d("preumsDebug", "Not ready, waiting...")
+                delay(150)
+            }
+
+            Log.d("preumsDebug", "Ready, reading line")
+            receiveChannel.readLine().also {
+                sendChannel.writeLine(ACKNOWLEDGE)
             }
         }
     }

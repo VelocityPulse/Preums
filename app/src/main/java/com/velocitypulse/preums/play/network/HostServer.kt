@@ -72,8 +72,7 @@ class HostServer : Host() {
 
         val serverInfo = ServerInfo(
             getLocalIP(context)!!.hostAddress!!,
-            CONNECTION_PORT,
-            null
+            CONNECTION_PORT
         )
 
         val message = Json.encodeToString(serverInfo)
@@ -105,15 +104,14 @@ class HostServer : Host() {
     private suspend fun startServerInfo() = withContext(Dispatchers.IO) {
         Log.d("debugPreums", "Server starting on port $CONNECTION_PORT")
 
-
         val serverSocket = ServerSocket(CONNECTION_PORT)
+
 
         try {
             while (isActive) {
                 Log.d("debugPreums", "Waiting for incoming connections...")
                 val clientSocket = serverSocket.accept()
 
-                DatagramSocket()
                 launch {
                     Log.d(
                         "debugPreums",

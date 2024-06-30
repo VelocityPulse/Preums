@@ -12,8 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -39,10 +38,6 @@ class HostServer : Host() {
 //    val discoveredHost = flowOf<HostInstance>()
 
 
-    private val _discoveredHostSharedFlow = MutableStateFlow<Set<ClientInfo>>(mutableSetOf())
-    val discoveredHostSharedFlow: StateFlow<Set<ClientInfo>>
-        get() = _discoveredHostSharedFlow
-
     private var broadcastJob: Job? = null
     private var serverInfoJob: Job? = null
 
@@ -52,7 +47,10 @@ class HostServer : Host() {
         }
     }
 
-    suspend fun startServer(context: Context) {
+    suspend fun startServer(
+        context: Context,
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>
+    ) {
         broadcastJob?.cancel()
         broadcastJob = CoroutineScope(coroutineContext).launch {
             startSendBroadcast(context)
@@ -60,7 +58,7 @@ class HostServer : Host() {
 
         serverInfoJob?.cancel()
         serverInfoJob = CoroutineScope(coroutineContext).launch {
-            startServerInfo()
+            startServerInfo(discoveredHostSharedFlow)
         }
     }
 
@@ -99,30 +97,34 @@ class HostServer : Host() {
         }
     }
 
-    private suspend fun startServerInfo() = withContext(Dispatchers.IO) {
-        Log.i(TAG, "Server starting on port $CONNECTION_PORT")
+    private suspend fun startServerInfo(discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>) =
+        withContext(Dispatchers.IO) {
+            Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
-        val serverSocket = ServerSocket(CONNECTION_PORT)
-        try {
-            while (isActive) {
-                Log.i(TAG, "Waiting for incoming connections...")
-                val clientSocket = serverSocket.accept()
+            val serverSocket = ServerSocket(CONNECTION_PORT)
+            try {
+                while (isActive) {
+                    Log.i(TAG, "Waiting for incoming connections...")
+                    val clientSocket = serverSocket.accept()
 
-                launch {
-                    Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
-                    handleClient(clientSocket)
+                    launch {
+                        Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
+                        handleClient(clientSocket, discoveredHostSharedFlow)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Server error: ${e.message}")
+                e.printStackTrace()
+            } finally {
+                serverSocket.close()
+                Log.i(TAG, "Server socket closed")
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Server error: ${e.message}")
-            e.printStackTrace()
-        } finally {
-            serverSocket.close()
-            Log.i(TAG, "Server socket closed")
         }
-    }
 
-    private suspend fun handleClient(clientSocket: Socket) {
+    private suspend fun handleClient(
+        clientSocket: Socket,
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>
+    ) {
         Log.i(TAG, "Handling client")
         withContext(Dispatchers.IO) {
             val comHelper = ComHelper(clientSocket)
@@ -134,7 +136,8 @@ class HostServer : Host() {
             try {
                 val clientInfo = Json.decodeFromString<ClientInfo>(message)
 
-                _discoveredHostSharedFlow.value += clientInfo
+                discoveredHostSharedFlow.emit(clientInfo)
+//                discoveredHostSharedFlow.value += clientInfo
 
                 val infoInstance = InstanceInfo(
                     name = "partie1",

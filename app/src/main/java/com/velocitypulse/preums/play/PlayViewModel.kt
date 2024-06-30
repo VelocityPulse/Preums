@@ -11,18 +11,28 @@ import com.velocitypulse.preums.core.di.getKoinInstance
 import com.velocitypulse.preums.play.network.Host
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.jetbrains.annotations.VisibleForTesting
+
+private const val TAG = "PlayViewModel"
 
 class PlayViewModel : ViewModel() {
 
-    var playState by mutableStateOf<PlayState>(PlayState.HostSelection)
+    var playState by mutableStateOf<PlayState>(PlayState.MenuSelection)
         private set
-//    val hostInstances: StateFlow<HostInstance> =
+
+    // SERVER
+    private val _discoveredHostSharedFlow = MutableSharedFlow<ClientInfo>()
+    private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
+    val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
 
     private var hostInstance: Host? = null
 
     init {
-        Log.i("debugPreums", "init PlayViewModel $this")
+        Log.i(TAG, "init PlayViewModel $this")
     }
 
     fun onBuzzClick(context: Context) {
@@ -30,9 +40,14 @@ class PlayViewModel : ViewModel() {
     }
 
     fun onStartHostServer(context: Context) {
-        playState = PlayState.Hosting
+        playState = PlayState.ServerResearchAndConfigure
         hostInstance = getKoinInstance<HostServer>().apply {
-            viewModelScope.launch { startServer(context) }
+            viewModelScope.launch {
+                startServer(context, _discoveredHostSharedFlow)
+                _discoveredHostSharedFlow.collect { clientInfo ->
+                    _clientsList.value += clientInfo
+                }
+            }
         }
     }
 
@@ -49,14 +64,19 @@ class PlayViewModel : ViewModel() {
     }
 
     fun onPause() {
-        Log.i("debugPreums", "onPause $hostInstance")
+        Log.i(TAG, "onPause $hostInstance")
         hostInstance?.stopProcedures()
     }
 
     fun onResume(context: Context) {
         when (playState) {
-            is PlayState.Hosting -> {
-                viewModelScope.launch { (hostInstance as HostServer).startServer(context) }
+            is PlayState.ServerResearchAndConfigure -> {
+                viewModelScope.launch {
+                    (hostInstance as HostServer).startServer(
+                        context,
+                        _discoveredHostSharedFlow
+                    )
+                }
             }
 
             is PlayState.Discovering -> {
@@ -65,5 +85,10 @@ class PlayViewModel : ViewModel() {
 
             else -> {}
         }
+    }
+
+    @VisibleForTesting
+    fun onPreview(state: PlayState) {
+        playState = state
     }
 }

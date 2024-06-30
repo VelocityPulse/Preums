@@ -52,9 +52,12 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
         ) {}
     }
 
-    if (state is PlayState.HostSelection) {
-//        val hostSelection = state
+    if (state is PlayState.MenuSelection) {
         HostSelectionDialog()
+    }
+
+    if (state is PlayState.ServerResearchAndConfigure) {
+        ServerResearchAndConfigureDialog()
     }
 }
 

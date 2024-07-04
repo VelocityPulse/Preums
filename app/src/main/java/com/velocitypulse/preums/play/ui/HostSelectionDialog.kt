@@ -24,10 +24,6 @@ import org.koin.androidx.compose.koinViewModel
 fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
     val context = LocalContext.current
 
-//    var dismissed by rememberSaveable {
-//        mutableStateOf(false)
-//    }
-
 //    if (!dismissed) {
     AlertDialog(modifier = Modifier,
         title = { Text(text = "Find host") },

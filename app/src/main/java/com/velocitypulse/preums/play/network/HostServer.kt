@@ -10,6 +10,7 @@ import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.net.DatagramPacket
@@ -31,13 +33,7 @@ private const val TAG = "HostServer"
 
 class HostServer : Host() {
 
-//    private val serverSocket = ServerSocket()
-
-//    private val receivedSockets = mutableListOf<Socket>()
-
-//    val discoveredHost = flowOf<HostInstance>()
-
-
+    private var acceptingServerSocket: ServerSocket? = null
     private var broadcastJob: Job? = null
     private var serverInfoJob: Job? = null
 
@@ -49,16 +45,19 @@ class HostServer : Host() {
 
     suspend fun startServer(
         context: Context,
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
     ) {
         broadcastJob?.cancel()
         broadcastJob = CoroutineScope(coroutineContext).launch {
             startSendBroadcast(context)
+            Log.i(TAG, "Broadcast coroutine leaving")
         }
 
         serverInfoJob?.cancel()
         serverInfoJob = CoroutineScope(coroutineContext).launch {
-            startServerInfo(discoveredHostSharedFlow)
+            startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow)
+            Log.i(TAG, "Server coroutine leaving")
         }
     }
 
@@ -73,9 +72,9 @@ class HostServer : Host() {
 
         val message = Json.encodeToString(serverInfo)
 
-        var socket: DatagramSocket? = null
+//        var socket: DatagramSocket? = null
+        val socket = DatagramSocket()
         try {
-            socket = DatagramSocket()
             socket.broadcast = true
 
             val buffer = message.toByteArray()
@@ -87,74 +86,101 @@ class HostServer : Host() {
                 Log.i(TAG, "Broadcast sent $address: $message")
                 delay(1000)
             }
-        } catch (e: java.lang.Exception) {
+        } catch (e: Exception) {
             e.printStackTrace()
             Log.e(TAG, "Broadcast failed", e)
         } finally {
-            if (socket != null && !socket.isClosed) {
-                socket.close()
-            }
+            socket.close()
+            Log.e(TAG, "broadcast socket closed")
         }
     }
 
-    private suspend fun startServerInfo(discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>) =
-        withContext(Dispatchers.IO) {
-            Log.i(TAG, "Server starting on port $CONNECTION_PORT")
+    private suspend fun startServerInfo(
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
+    ) = withContext(Dispatchers.IO) {
+        Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
-            val serverSocket = ServerSocket(CONNECTION_PORT)
-            try {
+        acceptingServerSocket?.close()
+        acceptingServerSocket = ServerSocket(CONNECTION_PORT)
+        // TODO : create party / cancel / create party is crashing
+        acceptingServerSocket?.let { serverSocket ->
+//            try {
                 while (isActive) {
                     Log.i(TAG, "Waiting for incoming connections...")
                     val clientSocket = serverSocket.accept()
 
                     launch {
                         Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
-                        handleClient(clientSocket, discoveredHostSharedFlow)
+                        handleClient(clientSocket, discoveredHostSharedFlow, lostHostSharedFlow)
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Server error: ${e.message}")
-                e.printStackTrace()
-            } finally {
+            // TODO : the try catch is probably not usefull so it's commented, until we're sure
+            // TODO : It's uesless
+//            } catch (e: Exception) {
+//                Log.e(TAG, "Server error: ${e.message}")
+//                e.printStackTrace()
+//            } finally {
                 serverSocket.close()
                 Log.i(TAG, "Server socket closed")
-            }
+//            }
         }
+    }
 
     private suspend fun handleClient(
         clientSocket: Socket,
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>
-    ) {
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
+    ) = withContext(Dispatchers.IO) {
         Log.i(TAG, "Handling client")
-        withContext(Dispatchers.IO) {
-            val comHelper = ComHelper(clientSocket)
 
-            Log.i(TAG, "Waiting for client info...")
-            val message = comHelper.readLineACK()
-            Log.i(TAG, "Client info received: $message")
+        val comHelper = ComHelper(clientSocket)
 
+        Log.i(TAG, "Waiting for client info...")
+        val message = comHelper.readLineACK()
+        Log.i(TAG, "Client info received: $message")
+
+        try {
+            val clientInfo = Json.decodeFromString<ClientInfo>(message)
+
+            discoveredHostSharedFlow.emit(clientInfo)
+
+            val infoInstance = InstanceInfo(
+                name = "partie1",
+                playersCount = 5,
+                isLocked = false,
+                primaryColor = Color.Blue.toArgb(),
+                password = null
+            )
+
+            comHelper.writeLineACK(Json.encodeToString(infoInstance))
+            launch {
+                keepConnectedClient(clientInfo, comHelper, lostHostSharedFlow)
+            }
+        } catch (e: Exception) {
+            Log.e(
+                TAG,
+                "Error decoding client info: ${e.message} ${e.stackTraceToString()}"
+            )
+        } finally {
+            clientSocket.close()
+        }
+    }
+
+    private suspend fun keepConnectedClient(
+        clientInfo: ClientInfo,
+        comHelper: ComHelper,
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
+    ) = withContext(Dispatchers.IO) {
+        while (isActive) {
+            delay(3000)
+            // Ping calculable ici
             try {
-                val clientInfo = Json.decodeFromString<ClientInfo>(message)
-
-                discoveredHostSharedFlow.emit(clientInfo)
-//                discoveredHostSharedFlow.value += clientInfo
-
-                val infoInstance = InstanceInfo(
-                    name = "partie1",
-                    playersCount = 5,
-                    isLocked = false,
-                    primaryColor = Color.Blue.toArgb(),
-                    password = null
-                )
-
-                comHelper.writeLineACK(Json.encodeToString(infoInstance))
-            } catch (e: Exception) {
-                Log.e(
-                    TAG,
-                    "Error decoding client info: ${e.message} ${e.stackTraceToString()}"
-                )
-            } finally {
-                clientSocket.close()
+                withTimeout(1000) {
+                    comHelper.writeLineACK("Checking connection")
+                }
+            } catch (e: TimeoutCancellationException) {
+                lostHostSharedFlow.emit(clientInfo)
             }
         }
     }

@@ -1,15 +1,19 @@
 package com.velocitypulse.preums.play.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,29 +42,37 @@ fun ServerResearchAndConfigureDialog(viewModel: PlayViewModel = koinViewModel())
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
                     .clickable {
+                        viewModel.onCancelReasearchDialog()
 //                            dismissed = true
 //                        viewModel.onStartHostServer(context)
                     },
             )
         },
         confirmButton = {
-            Text(
-                text = "Start",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .clickable {
-//                            dismissed = true
-//                        viewModel.onStartDiscovery(context)
-                    },
-            )
+//            Text(
+//                text = "Start",
+//                style = MaterialTheme.typography.labelLarge,
+//                color = MaterialTheme.colorScheme.primary,
+//                modifier = Modifier
+//                    .padding(horizontal = 8.dp)
+//                    .clickable {
+////                            dismissed = true
+////                        viewModel.onStartDiscovery(context)
+//                    },
+//            )
         },
         text = {
-            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
-                items(clients.toList()) { client ->
-                    Text(text = client.toString(), modifier = Modifier)
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentSize(Alignment.Center)
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .width(64.dp),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                )
             }
         })
 }

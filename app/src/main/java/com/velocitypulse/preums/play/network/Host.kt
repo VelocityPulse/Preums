@@ -67,7 +67,7 @@ abstract class Host {
         return null
     }
 
-    protected open class ComHelper(socket: Socket) {
+    protected open class ComHelper(val socket: Socket) {
 
         companion object {
             private const val ACKNOWLEDGE = "ACK"

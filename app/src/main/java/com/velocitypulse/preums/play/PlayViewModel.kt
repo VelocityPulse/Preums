@@ -26,6 +26,8 @@ class PlayViewModel : ViewModel() {
 
     // SERVER
     private val _discoveredHostSharedFlow = MutableSharedFlow<ClientInfo>()
+    private val _lostHostSharedFlow = MutableSharedFlow<ClientInfo>()
+
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
 
@@ -43,9 +45,17 @@ class PlayViewModel : ViewModel() {
         playState = PlayState.ServerResearchAndConfigure
         hostInstance = getKoinInstance<HostServer>().apply {
             viewModelScope.launch {
-                startServer(context, _discoveredHostSharedFlow)
-                _discoveredHostSharedFlow.collect { clientInfo ->
-                    _clientsList.value += clientInfo
+                startServer(context, _discoveredHostSharedFlow, _lostHostSharedFlow)
+
+                viewModelScope.launch {
+                    _discoveredHostSharedFlow.collect { clientInfo ->
+                        _clientsList.value += clientInfo
+                    }
+                }
+                viewModelScope.launch {
+                    _lostHostSharedFlow.collect { clientInfo ->
+                        _clientsList.value -= clientInfo
+                    }
                 }
             }
         }
@@ -57,6 +67,11 @@ class PlayViewModel : ViewModel() {
             viewModelScope.launch { startDiscovering() }
 //            synchronisedStartDiscovery(context)
         }
+    }
+
+    fun onCancelReasearchDialog() {
+        hostInstance?.stopProcedures()
+        playState = PlayState.MenuSelection
     }
 
     fun onDestroy() {
@@ -74,7 +89,8 @@ class PlayViewModel : ViewModel() {
                 viewModelScope.launch {
                     (hostInstance as HostServer).startServer(
                         context,
-                        _discoveredHostSharedFlow
+                        _discoveredHostSharedFlow,
+                        _lostHostSharedFlow
                     )
                 }
             }

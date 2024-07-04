@@ -46,7 +46,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
             modifier = Modifier
                 .align(Alignment.Center)
                 .clip(CircleShape)
-                .size(200.dp)
+                .size(300.dp)
                 .background(MaterialTheme.colorScheme.primary),
             onClick = buzzClick,
         ) {}

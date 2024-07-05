@@ -29,6 +29,8 @@ abstract class Host {
 
         @JvmStatic
         protected val DISCOVERING_PORT = 8888
+
+
     }
 
     protected fun getLocalIPv6(context: Context): Inet6Address? {
@@ -67,7 +69,7 @@ abstract class Host {
         return null
     }
 
-    protected open class ComHelper(val socket: Socket) {
+    protected open class ComHelper(socket: Socket) {
 
         companion object {
             private const val ACKNOWLEDGE = "ACK"

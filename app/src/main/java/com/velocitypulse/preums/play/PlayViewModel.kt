@@ -1,6 +1,7 @@
 package com.velocitypulse.preums.play
 
 import android.content.Context
+import android.net.ConnectivityManager
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,15 +12,19 @@ import com.velocitypulse.preums.core.di.getKoinInstance
 import com.velocitypulse.preums.play.network.Host
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
+import com.velocitypulse.preums.play.network.NetworkInfos
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
+import org.koin.java.KoinJavaComponent.inject
 
 private const val TAG = "PlayViewModel"
 
 class PlayViewModel : ViewModel() {
+
+    private val networkInfos: NetworkInfos by inject() // TODO : put the inject in the constructor
 
     var playState by mutableStateOf<PlayState>(PlayState.MenuSelection)
         private set
@@ -69,7 +74,7 @@ class PlayViewModel : ViewModel() {
         }
     }
 
-    fun onCancelReasearchDialog() {
+    fun onCancelResearchDialog() {
         hostInstance?.stopProcedures()
         playState = PlayState.MenuSelection
     }
@@ -84,6 +89,8 @@ class PlayViewModel : ViewModel() {
     }
 
     fun onResume(context: Context) {
+        checkConnectionPossibilities(context)
+
         when (playState) {
             is PlayState.ServerResearchAndConfigure -> {
                 viewModelScope.launch {
@@ -100,6 +107,16 @@ class PlayViewModel : ViewModel() {
             }
 
             else -> {}
+        }
+    }
+
+    private fun checkConnectionPossibilities(context: Context) {
+        val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
+        val mWifi = connManager!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
+
+        if (mWifi!!.isConnected) {
+            // Do whatever
+            // TODO : continue here
         }
     }
 

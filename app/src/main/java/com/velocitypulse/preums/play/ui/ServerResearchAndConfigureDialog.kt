@@ -42,7 +42,7 @@ fun ServerResearchAndConfigureDialog(viewModel: PlayViewModel = koinViewModel())
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
                     .clickable {
-                        viewModel.onCancelReasearchDialog()
+                        viewModel.onCancelResearchDialog()
 //                            dismissed = true
 //                        viewModel.onStartHostServer(context)
                     },

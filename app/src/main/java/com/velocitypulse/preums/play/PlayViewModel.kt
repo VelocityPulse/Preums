@@ -22,9 +22,7 @@ import org.koin.java.KoinJavaComponent.inject
 
 private const val TAG = "PlayViewModel"
 
-class PlayViewModel : ViewModel() {
-
-    private val networkInfos: NetworkInfos by inject() // TODO : put the inject in the constructor
+class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     var playState by mutableStateOf<PlayState>(PlayState.MenuSelection)
         private set
@@ -39,11 +37,19 @@ class PlayViewModel : ViewModel() {
     private var hostInstance: Host? = null
 
     init {
-        Log.i(TAG, "init PlayViewModel $this")
+        viewModelScope.launch {
+            networkInfos.wifiNetworkAvailable.collect { network ->
+                if (network == null && hostInstance == null) {
+                    playState = PlayState.StandingForWifi
+                } else if (network != null && playState == PlayState.StandingForWifi) {
+                    playState = PlayState.MenuSelection
+                }
+            }
+        }
     }
 
     fun onBuzzClick(context: Context) {
-        onResume(context)
+
     }
 
     fun onStartHostServer(context: Context) {
@@ -89,8 +95,6 @@ class PlayViewModel : ViewModel() {
     }
 
     fun onResume(context: Context) {
-        checkConnectionPossibilities(context)
-
         when (playState) {
             is PlayState.ServerResearchAndConfigure -> {
                 viewModelScope.launch {
@@ -107,16 +111,6 @@ class PlayViewModel : ViewModel() {
             }
 
             else -> {}
-        }
-    }
-
-    private fun checkConnectionPossibilities(context: Context) {
-        val connManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
-        val mWifi = connManager!!.getNetworkInfo(ConnectivityManager.TYPE_WIFI)
-
-        if (mWifi!!.isConnected) {
-            // Do whatever
-            // TODO : continue here
         }
     }
 

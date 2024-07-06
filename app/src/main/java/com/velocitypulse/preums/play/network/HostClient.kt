@@ -19,7 +19,7 @@ import java.net.Socket
 
 private const val TAG = "HostClient"
 
-class HostClient : Host() {
+class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     private var discoveringJob: Job? = null
     private var connectionJob: Job? = null
@@ -29,6 +29,7 @@ class HostClient : Host() {
     private val discoveredServers = mutableSetOf<ServerInfo>()
 
     suspend fun startDiscovering() {
+
         receiveBroadcast().collect {
             requestInformation(it)
         }

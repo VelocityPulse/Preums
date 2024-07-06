@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.ui
+package com.velocitypulse.preums.play.ui.dialogs
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,10 +21,11 @@ import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
+import com.velocitypulse.preums.play.ui.PlayScreen
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun ServerResearchAndConfigureDialog(viewModel: PlayViewModel = koinViewModel()) {
+fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
 
 //    val clients by viewModel.discoveredHostStateFlow.collectAsState(initial = emptySet())
 //    val clients by remember { viewModel.discoveredHostSharedFlow }

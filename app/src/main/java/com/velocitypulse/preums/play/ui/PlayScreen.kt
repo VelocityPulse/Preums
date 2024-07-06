@@ -21,6 +21,9 @@ import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
+import com.velocitypulse.preums.play.ui.dialogs.HostSelectionDialog
+import com.velocitypulse.preums.play.ui.dialogs.ServerResearchDialog
+import com.velocitypulse.preums.play.ui.dialogs.StandForWifiDialog
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -40,7 +43,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxHeight(0.5f),
-            text = state.javaClass.simpleName
+            text = "state : ${state.javaClass.simpleName}"
         )
         Button(
             modifier = Modifier
@@ -52,12 +55,16 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
         ) {}
     }
 
+    if (state is PlayState.StandingForWifi) {
+        StandForWifiDialog()
+    }
+
     if (state is PlayState.MenuSelection) {
         HostSelectionDialog()
     }
 
     if (state is PlayState.ServerResearchAndConfigure) {
-        ServerResearchAndConfigureDialog()
+        ServerResearchDialog()
     }
 }
 

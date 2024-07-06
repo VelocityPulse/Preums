@@ -31,11 +31,10 @@ import kotlin.random.Random
 private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
 private const val TAG = "HostServer"
 
-class HostServer : Host() {
+class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     private var acceptingServerSocket: ServerSocket? = null
-    private var broadcastJob: Job? = null
-    private var serverInfoJob: Job? = null
+    private var serverJob: Job? = null
 
     val hostInstances: Flow<ServerInfo> = flow {
         while (true) {
@@ -48,16 +47,15 @@ class HostServer : Host() {
         discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
         lostHostSharedFlow: MutableSharedFlow<ClientInfo>
     ) {
-        broadcastJob?.cancel()
-        broadcastJob = CoroutineScope(coroutineContext).launch {
-            startSendBroadcast(context)
-            Log.i(TAG, "Broadcast coroutine leaving")
-        }
-
-        serverInfoJob?.cancel()
-        serverInfoJob = CoroutineScope(coroutineContext).launch {
-            startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow)
-            Log.i(TAG, "Server coroutine leaving")
+        serverJob = CoroutineScope(coroutineContext).launch {
+            launch {
+                startSendBroadcast(context)
+                Log.i(TAG, "Broadcast coroutine leaving")
+            }
+            launch {
+                startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow)
+                Log.i(TAG, "Server coroutine leaving")
+            }
         }
     }
 
@@ -106,23 +104,23 @@ class HostServer : Host() {
         // TODO : create party / cancel / create party is crashing
         acceptingServerSocket?.let { serverSocket ->
 //            try {
-                while (isActive) {
-                    Log.i(TAG, "Waiting for incoming connections...")
-                    val clientSocket = serverSocket.accept()
+            while (isActive) {
+                Log.i(TAG, "Waiting for incoming connections...")
+                val clientSocket = serverSocket.accept()
 
-                    launch {
-                        Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
-                        handleClient(clientSocket, discoveredHostSharedFlow, lostHostSharedFlow)
-                    }
+                launch {
+                    Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
+                    handleClient(clientSocket, discoveredHostSharedFlow, lostHostSharedFlow)
                 }
+            }
             // TODO : the try catch is probably not usefull so it's commented, until we're sure
             // TODO : It's uesless
 //            } catch (e: Exception) {
 //                Log.e(TAG, "Server error: ${e.message}")
 //                e.printStackTrace()
 //            } finally {
-                serverSocket.close()
-                Log.i(TAG, "Server socket closed")
+            serverSocket.close()
+            Log.i(TAG, "Server socket closed")
 //            }
         }
     }
@@ -187,7 +185,6 @@ class HostServer : Host() {
 
     override fun stopProcedures() {
         Log.i(TAG, "Stopping procedures")
-        broadcastJob?.cancel()
-        serverInfoJob?.cancel()
+        serverJob?.cancel()
     }
 }

@@ -10,10 +10,10 @@ import org.koin.dsl.module
 
 val applicationModule: Module = module {
 
-    single { HostServer() }
-    single { HostClient() }
+    single { HostServer(get()) }
+    single { HostClient(get()) }
     single { NetworkInfos(get()) }
 
-    single { PlayViewModel() }
+    single { PlayViewModel(get()) }
 
 }

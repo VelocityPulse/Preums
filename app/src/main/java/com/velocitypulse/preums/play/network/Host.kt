@@ -20,16 +20,12 @@ import java.net.SocketException
 
 private const val TAG = "Host"
 
-abstract class Host {
+abstract class Host(val networkInfos: NetworkInfos) {
 
     companion object {
 
         @JvmStatic
-        protected val KEY_PASS = "123456"
-
-        @JvmStatic
         protected val DISCOVERING_PORT = 8888
-
 
     }
 

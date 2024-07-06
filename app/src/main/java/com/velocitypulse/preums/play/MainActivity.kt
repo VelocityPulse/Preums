@@ -22,14 +22,6 @@ class MainActivity : ComponentActivity() {
         setContent { Navigation() }
     }
 
-    @Preview(showBackground = true)
-    @Composable
-    fun GreetingPreview() {
-        PreviewInitializerProvider {
-            Navigation()
-        }
-    }
-
     override fun onResume() {
         Log.d("debugPreums", "Activity onResume")
         val playViewModel = get<PlayViewModel>()
@@ -51,6 +43,14 @@ class MainActivity : ComponentActivity() {
         playViewModel.onDestroy()
         super.onDestroy()
         Log.d("debugPreums", "Activity onDestroy finished")
+    }
+
+    @Preview(showBackground = true)
+    @Composable
+    fun GreetingPreview() {
+        PreviewInitializerProvider {
+            Navigation()
+        }
     }
 }
 

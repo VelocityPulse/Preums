@@ -55,16 +55,11 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
         ) {}
     }
 
-    if (state is PlayState.StandingForWifi) {
-        StandForWifiDialog()
-    }
-
-    if (state is PlayState.MenuSelection) {
-        HostSelectionDialog()
-    }
-
-    if (state is PlayState.ServerResearchAndConfigure) {
-        ServerResearchDialog()
+    when (state) {
+        is PlayState.StandingForWifi -> { StandForWifiDialog() }
+        is PlayState.MenuSelection -> { HostSelectionDialog() }
+        is PlayState.ServerResearchAndConfigure -> { ServerResearchDialog() }
+        else -> {}
     }
 }
 

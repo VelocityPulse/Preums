@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import com.velocitypulse.preums.play.theme.PreumsTheme
 import org.koin.android.ext.koin.androidContext
 import org.koin.compose.KoinApplication
@@ -47,11 +48,11 @@ inline fun <reified T> getKoinInstance(): T {
     }.value
 }
 
-
-
 @Composable
 fun PreviewInitializerProvider(content: @Composable () -> Unit) {
+    val context: Context = LocalContext.current
     KoinApplication(application = {
+        androidContext(context)
         modules(ApplicationInitializer.getListOfModules())
     }) {
         PreumsTheme { content() }

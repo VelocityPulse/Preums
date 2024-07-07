@@ -21,10 +21,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.net.BindException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketException
 import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
 
@@ -33,6 +35,7 @@ private const val TAG = "HostServer"
 
 class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
+    private var broadcastSocket: DatagramSocket? = null
     private var acceptingServerSocket: ServerSocket? = null
     private var serverJob: Job? = null
 
@@ -61,7 +64,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     private suspend fun startSendBroadcast(context: Context) = withContext(Dispatchers.IO) {
         val address = getBroadcast(getLocalIP(context)!!)!!
-        Log.i(TAG, "Broadcast sent to : $address")
+        Log.i(TAG, "Starting broadcast with $address")
 
         val serverInfo = ServerInfo(
             getLocalIP(context)!!.hostAddress!!,
@@ -70,26 +73,29 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
         val message = Json.encodeToString(serverInfo)
 
-//        var socket: DatagramSocket? = null
-        val socket = DatagramSocket()
-        try {
-            socket.broadcast = true
+        broadcastSocket?.close()
+        broadcastSocket = DatagramSocket()
+        broadcastSocket?.let { socket ->
+            try {
+                socket.broadcast = true
+                socket.reuseAddress = true
 
-            val buffer = message.toByteArray()
-            val packet =
-                DatagramPacket(buffer, buffer.size, address, DISCOVERING_PORT)
+                val buffer = message.toByteArray()
+                val packet = DatagramPacket(buffer, buffer.size, address, DISCOVERING_PORT)
 
-            while (isActive) {
-                socket.send(packet)
-                Log.i(TAG, "Broadcast sent $address: $message")
-                delay(1000)
+                while (isActive) {
+                    Log.i(TAG, "Sending broadcast")
+                    socket.send(packet)
+                    Log.i(TAG, "Broadcast sent $address: $message")
+                    delay(1000)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e(TAG, "Broadcast failed", e)
+            } finally {
+                socket.close()
+                Log.e(TAG, "broadcast socket closed")
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e(TAG, "Broadcast failed", e)
-        } finally {
-            socket.close()
-            Log.e(TAG, "broadcast socket closed")
         }
     }
 
@@ -99,29 +105,36 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
     ) = withContext(Dispatchers.IO) {
         Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
-        acceptingServerSocket?.close()
-        acceptingServerSocket = ServerSocket(CONNECTION_PORT)
-        // TODO : create party / cancel / create party is crashing
+        for (attempts in 0..10) {
+            try {
+                acceptingServerSocket?.close()
+                acceptingServerSocket = ServerSocket(CONNECTION_PORT)
+                Log.i(TAG, "Server socket created on port $CONNECTION_PORT")
+                break
+            } catch (e: BindException) {
+                Log.e(TAG, "Bind failed: ${e.message}")
+                delay(100)
+                return@withContext // TODO send some failure information ?
+            }
+        }
+
         acceptingServerSocket?.let { serverSocket ->
-//            try {
             while (isActive) {
                 Log.i(TAG, "Waiting for incoming connections...")
-                val clientSocket = serverSocket.accept()
+                val clientSocket = try {
+                    serverSocket.accept()
+                } catch (e: SocketException) {
+                    Log.e(TAG, "Socket closed or accept failed: ${e.message}")
+                    break
+                }
 
                 launch {
                     Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
                     handleClient(clientSocket, discoveredHostSharedFlow, lostHostSharedFlow)
                 }
             }
-            // TODO : the try catch is probably not usefull so it's commented, until we're sure
-            // TODO : It's uesless
-//            } catch (e: Exception) {
-//                Log.e(TAG, "Server error: ${e.message}")
-//                e.printStackTrace()
-//            } finally {
             serverSocket.close()
             Log.i(TAG, "Server socket closed")
-//            }
         }
     }
 

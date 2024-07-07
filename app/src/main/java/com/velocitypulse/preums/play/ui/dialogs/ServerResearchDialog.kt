@@ -34,7 +34,7 @@ fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
 
     AlertDialog(modifier = Modifier,
         title = { Text(text = "Find host") },
-        onDismissRequest = { },
+        onDismissRequest = {},
         dismissButton = {
             Text(
                 text = "Cancel",

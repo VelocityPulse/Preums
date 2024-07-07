@@ -29,6 +29,11 @@ abstract class Host(val networkInfos: NetworkInfos) {
 
     }
 
+    enum class EventState {
+        NO_EVENT,
+        PORT_FAILURE
+    }
+
     protected fun getLocalIPv6(context: Context): Inet6Address? {
         val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 

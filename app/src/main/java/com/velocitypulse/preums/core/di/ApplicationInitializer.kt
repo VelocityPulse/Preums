@@ -17,7 +17,7 @@ import org.koin.core.module.Module
 class ApplicationInitializer : KoinComponent {
 
     companion object {
-        lateinit var deviceName : String
+        lateinit var deviceName: String
             private set
 
         fun getListOfModules(): List<Module> {

@@ -5,5 +5,6 @@ sealed class PlayState {
     data object MenuSelection : PlayState()
     data object Discovering : PlayState()
     data object ServerResearchAndConfigure : PlayState()
+    data object NetFailure : PlayState()
     data object Playing : PlayState()
 }

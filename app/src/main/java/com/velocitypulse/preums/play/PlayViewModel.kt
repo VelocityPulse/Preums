@@ -1,7 +1,6 @@
 package com.velocitypulse.preums.play
 
 import android.content.Context
-import android.net.ConnectivityManager
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +17,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.jetbrains.annotations.VisibleForTesting
-import org.koin.java.KoinJavaComponent.inject
 
 private const val TAG = "PlayViewModel"
 
@@ -30,6 +28,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     // SERVER
     private val _discoveredHostSharedFlow = MutableSharedFlow<ClientInfo>()
     private val _lostHostSharedFlow = MutableSharedFlow<ClientInfo>()
+    private val _eventStateFlow = MutableStateFlow(Host.EventState.NO_EVENT)
 
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
@@ -56,14 +55,25 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         playState = PlayState.ServerResearchAndConfigure
         hostInstance = getKoinInstance<HostServer>().apply {
             viewModelScope.launch {
-                startServer(context, _discoveredHostSharedFlow, _lostHostSharedFlow)
+                startServer(
+                    context, _discoveredHostSharedFlow, _lostHostSharedFlow, _eventStateFlow
+                )
 
-                viewModelScope.launch {
+                launch {
+                    _eventStateFlow.collect { event ->
+                        if (event == Host.EventState.PORT_FAILURE) {
+                            playState = PlayState.NetFailure
+                            stopProcedures()
+                        }
+                    }
+                }
+
+                launch {
                     _discoveredHostSharedFlow.collect { clientInfo ->
                         _clientsList.value += clientInfo
                     }
                 }
-                viewModelScope.launch {
+                launch {
                     _lostHostSharedFlow.collect { clientInfo ->
                         _clientsList.value -= clientInfo
                     }
@@ -101,7 +111,8 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
                     (hostInstance as HostServer).startServer(
                         context,
                         _discoveredHostSharedFlow,
-                        _lostHostSharedFlow
+                        _lostHostSharedFlow,
+                        _eventStateFlow
                     )
                 }
             }

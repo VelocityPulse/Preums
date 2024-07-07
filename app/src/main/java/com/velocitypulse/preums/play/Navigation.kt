@@ -16,10 +16,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.velocitypulse.preums.play.theme.PreumsTheme
 import com.velocitypulse.preums.exercise.ui.GraphScreen
-import com.velocitypulse.preums.play.ui.Screens
+import com.velocitypulse.preums.play.theme.PreumsTheme
 import com.velocitypulse.preums.play.ui.PlayScreen
+import com.velocitypulse.preums.play.ui.Screens
 
 @Composable
 fun Navigation() {

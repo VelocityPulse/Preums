@@ -22,6 +22,7 @@ import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.ui.dialogs.HostSelectionDialog
+import com.velocitypulse.preums.play.ui.dialogs.NetFailureDialog
 import com.velocitypulse.preums.play.ui.dialogs.ServerResearchDialog
 import com.velocitypulse.preums.play.ui.dialogs.StandForWifiDialog
 import org.koin.androidx.compose.koinViewModel
@@ -56,9 +57,22 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
     }
 
     when (state) {
-        is PlayState.StandingForWifi -> { StandForWifiDialog() }
-        is PlayState.MenuSelection -> { HostSelectionDialog() }
-        is PlayState.ServerResearchAndConfigure -> { ServerResearchDialog() }
+        is PlayState.StandingForWifi -> {
+            StandForWifiDialog()
+        }
+
+        is PlayState.MenuSelection -> {
+            HostSelectionDialog()
+        }
+
+        is PlayState.ServerResearchAndConfigure -> {
+            ServerResearchDialog()
+        }
+
+        is PlayState.NetFailure -> {
+            NetFailureDialog()
+        }
+
         else -> {}
     }
 }

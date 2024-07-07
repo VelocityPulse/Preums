@@ -38,8 +38,9 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun PreumsTheme(darkTheme: Boolean = isSystemInDarkTheme(), // Dynamic color is available on Android 12+
-                content: @Composable () -> Unit
+fun PreumsTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(), // Dynamic color is available on Android 12+
+    content: @Composable () -> Unit
 ) {
     val colorScheme = when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -56,7 +57,10 @@ fun PreumsTheme(darkTheme: Boolean = isSystemInDarkTheme(), // Dynamic color is 
     }
 
     val backgroundColor = colorScheme.inverseOnSurface
-    Box(Modifier.background(backgroundColor).fillMaxSize())
+    Box(
+        Modifier
+            .background(backgroundColor)
+            .fillMaxSize())
 
     val view = LocalView.current
     if (!view.isInEditMode) {

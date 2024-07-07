@@ -14,6 +14,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -48,7 +49,8 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
     suspend fun startServer(
         context: Context,
         discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        eventMessage: MutableStateFlow<EventState>
     ) {
         serverJob = CoroutineScope(coroutineContext).launch {
             launch {
@@ -56,7 +58,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
                 Log.i(TAG, "Broadcast coroutine leaving")
             }
             launch {
-                startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow)
+                startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow, eventMessage)
                 Log.i(TAG, "Server coroutine leaving")
             }
         }
@@ -101,7 +103,8 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     private suspend fun startServerInfo(
         discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
+        lostHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        eventMessage: MutableStateFlow<EventState>
     ) = withContext(Dispatchers.IO) {
         Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
@@ -114,7 +117,8 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
             } catch (e: BindException) {
                 Log.e(TAG, "Bind failed: ${e.message}")
                 delay(100)
-                return@withContext // TODO send some failure information ?
+                eventMessage.value = EventState.PORT_FAILURE
+                return@withContext
             }
         }
 

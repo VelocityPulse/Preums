@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.0.0"
-koin = "3.5.0"
+koin = "3.5.6"
 coreKtx = "1.13.1"
 kotlinxSerializationJson = "1.7.0"
 lifecycleRuntimeKtx = "2.8.2"

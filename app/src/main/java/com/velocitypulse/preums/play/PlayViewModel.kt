@@ -22,7 +22,7 @@ private const val TAG = "PlayViewModel"
 
 class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
-    var playState by mutableStateOf<PlayState>(PlayState.MenuSelection)
+    var playState by mutableStateOf<PlayState>(PlayState.WiFiWarning)
         private set
 
     // SERVER
@@ -35,7 +35,12 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     private var hostInstance: Host? = null
 
-    init {
+    fun onWifiWarningDismissed() {
+        playState = PlayState.StandingForWifi
+        startWifiConnectionSurvey()
+    }
+
+    private fun startWifiConnectionSurvey() {
         viewModelScope.launch {
             networkInfos.wifiNetworkAvailable.collect { network ->
                 if (network == null && hostInstance == null) {

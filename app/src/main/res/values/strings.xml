@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Preums</string>
+    <string name="warning_title">Important</string>
+    <string name="warning_message">Attention : Pour que Preums fonctionne correctement, tous les joueurs doivent être connectés au même réseau WiFi.</string>
+    <string name="warning_confirm">J\'ai compris</string>
+    <string name="ok">OK</string>
 </resources>

@@ -21,8 +21,8 @@ import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
+import com.velocitypulse.preums.play.ui.dialogs.AppDialogManager
 import com.velocitypulse.preums.play.ui.dialogs.HostSelectionDialog
-import com.velocitypulse.preums.play.ui.dialogs.NetFailureDialog
 import com.velocitypulse.preums.play.ui.dialogs.ServerResearchDialog
 import com.velocitypulse.preums.play.ui.dialogs.StandForWifiDialog
 import org.koin.androidx.compose.koinViewModel
@@ -40,6 +40,7 @@ fun PlayScreen(navController: NavController, viewModel: PlayViewModel = koinView
 @Composable
 fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
+        AppDialogManager()
         Text(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -67,10 +68,6 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
 
         is PlayState.ServerResearchAndConfigure -> {
             ServerResearchDialog()
-        }
-
-        is PlayState.NetFailure -> {
-            NetFailureDialog()
         }
 
         else -> {}

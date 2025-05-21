@@ -20,19 +20,18 @@ import com.velocitypulse.preums.exercise.ui.GraphScreen
 import com.velocitypulse.preums.play.theme.PreumsTheme
 import com.velocitypulse.preums.play.ui.PlayScreen
 import com.velocitypulse.preums.play.ui.Screens
+import com.velocitypulse.preums.play.ui.components.WifiWarningDialog
 
 @Composable
 fun Navigation() {
     PreumsTheme {
-        // Nav controller is not that useful in this application as we only have one screen
-        // with a lot of states
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = Screens.PlayScreen.route) {
-            composable(route = Screens.GraphScreen.route) {
-                GraphScreen(navController = navController)
-            }
             composable(route = Screens.PlayScreen.route) {
                 PlayScreen(navController = navController)
+            }
+            composable(route = Screens.GraphScreen.route) {
+                GraphScreen(navController = navController)
             }
         }
     }

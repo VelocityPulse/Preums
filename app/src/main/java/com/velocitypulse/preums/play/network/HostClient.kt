@@ -29,7 +29,6 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
     private val discoveredServers = mutableSetOf<ServerInfo>()
 
     suspend fun startDiscovering() {
-
         receiveBroadcast().collect {
             requestInformation(it)
         }

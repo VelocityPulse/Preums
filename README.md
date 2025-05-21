@@ -1,54 +1,59 @@
 # Preums Project
 
 ## 🚀 Project Overview
-This is an Android application developed using Kotlin and Jetpack Compose.
+A local network discovery and interaction Android application developed using Kotlin and Jetpack Compose, focusing on dynamic network connectivity and state management.
 
-## 📐 Coding Preferences and Best Practices
+## 🌐 Key Features
+- Dynamic WiFi network state tracking
+- Local network host/client discovery
+- Flexible state machine for application flow
+- Reactive network interaction
 
-### 🏗️ Project Structure
-- Organized modular structure with clear separation of concerns
-- Packages grouped by feature and functionality:
-  - `core`: Core application components
-  - `play`: Main application logic
-  - `exercise`: UI and experimental components
-  - `network`: Networking-related classes
+## 📐 Project Structure
+### 🏗️ Architectural Components
+- `core`: Core application infrastructure
+- `play`: Main application logic and state management
+- `network`: Network discovery and communication classes
 
-### 🧩 Architecture Patterns
-- MVVM (Model-View-ViewModel) architecture
-- Dependency Injection (DI) using modules
-- Reactive UI with Jetpack Compose
+## 🧩 Technical Architecture
+- MVVM with Finite State Machine (FSM)
+- Dependency Injection via Koin
+- Reactive programming with Kotlin Coroutines
+- Jetpack Compose for UI
 
-### 💻 Kotlin Coding Conventions
-- Prefer immutable data (`val`) over mutable (`var`)
-- Use data classes for model representations
-- Leverage Kotlin's null safety features
-- Utilize extension functions and functional programming concepts
+## 🔍 Current Development Stage
+- Network connectivity state management implemented
+- Basic host discovery infrastructure
+- Flexible state transitions defined
 
-### 🎨 UI Development
-- Jetpack Compose for modern, declarative UI
-- Consistent theming (color, typography)
-- Modular UI components
-- Responsive design considerations
+### 📡 Network States
+- Standing for WiFi
+- Menu Selection
+- Host Discovery
+- Server Research
+- Network Failure
+- Active Play Mode
 
-### 🔒 Best Practices
-- Separate network, UI, and business logic
-- Use view models for state management
-- Implement error handling and network failure dialogs
-- Create reusable UI components
+## 💻 Technical Stack
+- Language: Kotlin
+- UI Framework: Jetpack Compose
+- Dependency Injection: Koin
+- Asynchronous Programming: Kotlin Coroutines
+- Minimum SDK: 29
+- Target SDK: 35
 
-### 🧪 Testing
-- Unit tests for core logic
-- Instrumented tests for Android-specific components
+## 🚧 Next Development Steps
+- Complete network host connection logic
+- Implement user interaction flows
+- Develop comprehensive UI components
+- Add error handling and network event management
 
-### 🛠️ Build and Configuration
-- Gradle Kotlin DSL (`build.gradle.kts`)
-- ProGuard rules for code optimization
-- Resource management through XML and Kotlin
-
-## 📦 Dependencies
+## 📦 Core Dependencies
 - Kotlin
-- Jetpack Compose
-- Android SDK
+- Android Jetpack
+- Koin
+- Coroutines
+
 - Networking libraries (to be specified)
 
 ## 🤝 Contributing
@@ -58,5 +63,9 @@ This is an Android application developed using Kotlin and Jetpack Compose.
 4. Document significant changes
 
 ## 📝 Notes
+
+## 🚨 Pending TODOs
+- Complete server response handling in `HostClient`
+- Implement `stopProcedures()` method in `HostClient`
 - Project is a work in progress
 - Experimental features in `exercise` package

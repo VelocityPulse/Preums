@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ktlint) apply true
 }
 
 android {
@@ -26,7 +27,8 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
     }
@@ -36,12 +38,12 @@ android {
     }
     kotlinOptions {
         jvmTarget = "19"
-        freeCompilerArgs += listOf("-Xjvm-default=all")
-    }
+        freeCompilerArgs += listOf("-Xjvm-default=all") }
     buildFeatures {
         compose = true
         viewBinding = true
     }
+
 //    composeOptions {
 //        kotlinCompilerExtensionVersion = "1.5.14"
 //    }

@@ -3,4 +3,5 @@ plugins {
     id("com.android.application") version "8.10.0" apply false
     alias(libs.plugins.kotlin) apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.20" apply false
+    alias(libs.plugins.ktlint) apply false
 }

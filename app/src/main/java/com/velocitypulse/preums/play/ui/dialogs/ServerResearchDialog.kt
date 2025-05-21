@@ -26,13 +26,12 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
-
 //    val clients by viewModel.discoveredHostStateFlow.collectAsState(initial = emptySet())
 //    val clients by remember { viewModel.discoveredHostSharedFlow }
     val clients by viewModel.clientsList.collectAsState()
 
-
-    AlertDialog(modifier = Modifier,
+    AlertDialog(
+        modifier = Modifier,
         title = { Text(text = "Find host") },
         onDismissRequest = {},
         dismissButton = {
@@ -46,7 +45,7 @@ fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
                         viewModel.onCancelResearchDialog()
 //                            dismissed = true
 //                        viewModel.onStartHostServer(context)
-                    },
+                    }
             )
         },
         confirmButton = {
@@ -57,8 +56,8 @@ fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
 //                modifier = Modifier
 //                    .padding(horizontal = 8.dp)
 //                    .clickable {
-////                            dismissed = true
-////                        viewModel.onStartDiscovery(context)
+// //                            dismissed = true
+// //                        viewModel.onStartDiscovery(context)
 //                    },
 //            )
         },
@@ -72,10 +71,11 @@ fun ServerResearchDialog(viewModel: PlayViewModel = koinViewModel()) {
                     modifier = Modifier
                         .width(64.dp),
                     color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
-        })
+        }
+    )
 }
 
 @Composable
@@ -86,6 +86,7 @@ fun ServerResearchAndConfigureDialogPreview() {
             navController = rememberNavController(),
             viewModel = koinViewModel<PlayViewModel>().apply {
                 onPreview(PlayState.ServerResearchAndConfigure)
-            })
+            }
+        )
     }
 }

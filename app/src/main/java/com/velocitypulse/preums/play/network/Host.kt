@@ -26,7 +26,6 @@ abstract class Host(val networkInfos: NetworkInfos) {
 
         @JvmStatic
         protected val DISCOVERING_PORT = 8888
-
     }
 
     enum class EventState {
@@ -142,17 +141,4 @@ abstract class Host(val networkInfos: NetworkInfos) {
             }
         }
     }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-

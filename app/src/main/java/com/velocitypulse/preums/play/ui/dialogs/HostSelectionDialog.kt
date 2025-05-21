@@ -21,7 +21,8 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
     val context = LocalContext.current
 
 //    if (!dismissed) {
-    AlertDialog(modifier = Modifier,
+    AlertDialog(
+        modifier = Modifier,
         title = { Text(text = "Find host") },
         onDismissRequest = { },
         dismissButton = {
@@ -34,7 +35,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                     .clickable {
 //                            dismissed = true
                         viewModel.onStartHostServer(context)
-                    },
+                    }
             )
         },
         confirmButton = {
@@ -47,7 +48,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                     .clickable {
 //                            dismissed = true
                         viewModel.onStartDiscovery(context)
-                    },
+                    }
             )
         },
         text = {
@@ -58,7 +59,8 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                     }
                 }
 */
-        })
+        }
+    )
 }
 
 @Composable

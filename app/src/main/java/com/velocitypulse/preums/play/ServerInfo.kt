@@ -5,12 +5,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ServerInfo(
     val ip: String,
-    val port: Int,
+    val port: Int
 )
 
 @Serializable
 data class ClientInfo(
-    val name: String,
+    val name: String
 )
 
 @Serializable

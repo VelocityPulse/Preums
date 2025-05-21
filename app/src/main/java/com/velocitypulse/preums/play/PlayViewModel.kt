@@ -53,7 +53,6 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     }
 
     fun onBuzzClick(context: Context) {
-
     }
 
     fun onStartHostServer(context: Context) {
@@ -61,7 +60,10 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         hostInstance = getKoinInstance<HostServer>().apply {
             viewModelScope.launch {
                 startServer(
-                    context, _discoveredHostSharedFlow, _lostHostSharedFlow, _eventStateFlow
+                    context,
+                    _discoveredHostSharedFlow,
+                    _lostHostSharedFlow,
+                    _eventStateFlow
                 )
 
                 launch {

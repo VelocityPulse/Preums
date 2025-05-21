@@ -6,9 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import com.velocitypulse.preums.core.di.ApplicationInitializer
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
-import com.velocitypulse.preums.play.ui.components.WifiWarningDialog
 import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
@@ -52,6 +50,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-
-

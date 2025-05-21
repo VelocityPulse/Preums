@@ -10,11 +10,11 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.navigation.NavHostController
 import com.velocitypulse.preums.play.ui.Screens
 
-
 @Composable
 fun GraphScreen(navController: NavHostController) {
     RandomGraphCompose()
-    Button(modifier = Modifier.fillMaxSize(),
+    Button(
+        modifier = Modifier.fillMaxSize(),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.Transparent,
             contentColor = Color.Transparent
@@ -22,5 +22,6 @@ fun GraphScreen(navController: NavHostController) {
         shape = RectangleShape,
         onClick = {
             navController.navigate(Screens.PlayScreen.route)
-        }) {}
+        }
+    ) {}
 }

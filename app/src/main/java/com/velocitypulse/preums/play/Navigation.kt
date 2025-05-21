@@ -20,7 +20,6 @@ import com.velocitypulse.preums.exercise.ui.GraphScreen
 import com.velocitypulse.preums.play.theme.PreumsTheme
 import com.velocitypulse.preums.play.ui.PlayScreen
 import com.velocitypulse.preums.play.ui.Screens
-import com.velocitypulse.preums.play.ui.components.WifiWarningDialog
 
 @Composable
 fun Navigation() {
@@ -35,7 +34,6 @@ fun Navigation() {
             }
         }
     }
-
 }
 
 // Typicall usage of navigation for when we want to change page
@@ -50,7 +48,7 @@ fun NavigationPreview(navController: NavController) {
                 .background(MaterialTheme.colorScheme.primary),
             onClick = {
                 navController.navigate(Screens.GraphScreen.route)
-            },
+            }
         ) {}
     }
 }

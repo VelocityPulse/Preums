@@ -7,7 +7,6 @@ import com.velocitypulse.preums.play.network.NetworkInfos
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-
 val applicationModule: Module = module {
 
     single { HostServer(get()) }
@@ -15,5 +14,4 @@ val applicationModule: Module = module {
     single { NetworkInfos(get()) }
 
     single { PlayViewModel(get()) }
-
 }

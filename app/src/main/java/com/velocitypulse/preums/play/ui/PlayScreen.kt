@@ -53,7 +53,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
                 .clip(CircleShape)
                 .size(300.dp)
                 .background(MaterialTheme.colorScheme.primary),
-            onClick = buzzClick,
+            onClick = buzzClick
         ) {}
     }
 

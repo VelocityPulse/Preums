@@ -18,7 +18,8 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun NetFailureDialog() {
-    AlertDialog(modifier = Modifier,
+    AlertDialog(
+        modifier = Modifier,
         title = { Text(text = "Connection problem") },
         onDismissRequest = { },
         dismissButton = {},
@@ -32,16 +33,19 @@ fun NetFailureDialog() {
             ) {
                 Text(text = "Application was not able to create a server connection.")
             }
-        })
+        }
+    )
 }
 
 @Composable
 @Preview
 fun NetFailureDialogPreview() {
     PreviewInitializerProvider {
-        PlayScreen(navController = rememberNavController(),
+        PlayScreen(
+            navController = rememberNavController(),
             viewModel = koinViewModel<PlayViewModel>().apply {
                 onPreview(PlayState.NetFailure)
-            })
+            }
+        )
     }
 }

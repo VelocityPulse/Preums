@@ -30,30 +30,32 @@ fun RandomGraphCompose(modifier: Modifier = Modifier) {
     ) {
         val rectColor = MaterialTheme.colorScheme.secondary
         val primary = MaterialTheme.colorScheme.primary
-        Spacer(modifier = Modifier
-            .align(Alignment.Center)
-            .padding(8.dp)
-            .aspectRatio(3 / 2f)
-            .fillMaxSize()
-            .drawWithCache {
-                val path = generateSmoothPath(getData(), size)
+        Spacer(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(8.dp)
+                .aspectRatio(3 / 2f)
+                .fillMaxSize()
+                .drawWithCache {
+                    val path = generateSmoothPath(getData(), size)
 
-                val filledPath = Path()
-                filledPath.addPath(path)
-                filledPath.lineTo(size.width, size.height)
-                filledPath.lineTo(0f, size.height)
-                filledPath.close()
+                    val filledPath = Path()
+                    filledPath.addPath(path)
+                    filledPath.lineTo(size.width, size.height)
+                    filledPath.lineTo(0f, size.height)
+                    filledPath.close()
 
-                val brush = Brush.verticalGradient(
-                    listOf(primary.copy(alpha = 0.9f), Color.Transparent)
-                )
+                    val brush = Brush.verticalGradient(
+                        listOf(primary.copy(alpha = 0.9f), Color.Transparent)
+                    )
 
-                onDrawBehind {
-                    drawBackgroundGraph(this, rectColor)
-                    drawPath(filledPath, brush)
-                    drawPath(path, primary, style = Stroke(2.dp.toPx()))
+                    onDrawBehind {
+                        drawBackgroundGraph(this, rectColor)
+                        drawPath(filledPath, brush)
+                        drawPath(path, primary, style = Stroke(2.dp.toPx()))
+                    }
                 }
-            })
+        )
     }
 }
 
@@ -99,20 +101,23 @@ fun generateSmoothPath(data: List<Balance>, size: Size): Path {
             path.moveTo(
                 0f,
                 size.height - (balance.amount - min.amount).toFloat() *
-                        heightPxPerAmount
+                    heightPxPerAmount
             )
-
         }
 
         val balanceX = i * weekWidth
         val balanceY = size.height - (balance.amount - min.amount).toFloat() *
-                heightPxPerAmount
+            heightPxPerAmount
         // to do smooth curve graph - we use cubicTo, uncomment section below for non-curve
         val controlPoint1 = PointF((balanceX + previousBalanceX) / 2f, previousBalanceY)
         val controlPoint2 = PointF((balanceX + previousBalanceX) / 2f, balanceY)
         path.cubicTo(
-            controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y,
-            balanceX, balanceY
+            controlPoint1.x,
+            controlPoint1.y,
+            controlPoint2.x,
+            controlPoint2.y,
+            balanceX,
+            balanceY
         )
 
         previousBalanceX = balanceX

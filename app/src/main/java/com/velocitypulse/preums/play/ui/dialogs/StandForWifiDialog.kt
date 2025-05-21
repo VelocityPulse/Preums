@@ -24,7 +24,8 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun StandForWifiDialog() {
-    AlertDialog(modifier = Modifier,
+    AlertDialog(
+        modifier = Modifier,
         title = { Text(text = "Connection problem") },
         onDismissRequest = { },
         dismissButton = {},
@@ -41,19 +42,22 @@ fun StandForWifiDialog() {
                 CircularProgressIndicator(
                     modifier = Modifier.width(64.dp),
                     color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
-        })
+        }
+    )
 }
 
 @Composable
 @Preview
 fun StandForWifiDialogPreview() {
     PreviewInitializerProvider {
-        PlayScreen(navController = rememberNavController(),
+        PlayScreen(
+            navController = rememberNavController(),
             viewModel = koinViewModel<PlayViewModel>().apply {
                 onPreview(PlayState.StandingForWifi)
-            })
+            }
+        )
     }
 }

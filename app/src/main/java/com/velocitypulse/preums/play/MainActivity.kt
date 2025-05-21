@@ -12,11 +12,8 @@ import org.koin.android.ext.android.get
 
 class MainActivity : ComponentActivity() {
 
-    private var applicationInitializer = ApplicationInitializer()
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        applicationInitializer.run(application)
-
+        Log.d("debugPreums", "Activity onCreate")
         super.onCreate(savedInstanceState)
 
         setContent { Navigation() }

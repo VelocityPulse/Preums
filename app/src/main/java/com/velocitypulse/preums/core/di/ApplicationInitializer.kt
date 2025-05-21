@@ -14,7 +14,7 @@ import org.koin.core.context.loadKoinModules
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 
-class ApplicationInitializer : KoinComponent {
+class ApplicationInitializer : Application(), KoinComponent {
 
     companion object {
         lateinit var deviceName: String
@@ -25,16 +25,16 @@ class ApplicationInitializer : KoinComponent {
         }
     }
 
-    fun run(application: Application) {
+    override fun onCreate() {
+        super.onCreate()
         startKoin {
-            androidContext(application)
+            androidContext(this@ApplicationInitializer)
         }
 
         loadKoinModules(getListOfModules())
 
-        deviceName = getDeviceName(application.applicationContext)
+        deviceName = getDeviceName(applicationContext)
     }
-
     private fun getDeviceName(context: Context): String {
         return Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
             ?: Settings.System.getString(context.contentResolver, Settings.System.NAME)

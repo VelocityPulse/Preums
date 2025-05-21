@@ -36,6 +36,7 @@ android {
     }
     kotlinOptions {
         jvmTarget = "19"
+        freeCompilerArgs += listOf("-Xjvm-default=all")
     }
     buildFeatures {
         compose = true

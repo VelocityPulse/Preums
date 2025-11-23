@@ -149,10 +149,10 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
     ) = withContext(Dispatchers.IO) {
         Log.i(TAG, "Handling client")
 
-        val comHelper = ComHelper(clientSocket)
+        val netHelper = NetHelper(clientSocket)
 
         Log.i(TAG, "Waiting for client info...")
-        val message = comHelper.readLineACK()
+        val message = netHelper.readLineACK()
         Log.i(TAG, "Client info received: $message")
 
         try {
@@ -168,9 +168,9 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
                 password = null
             )
 
-            comHelper.writeLineACK(Json.encodeToString(infoInstance))
+            netHelper.writeLineACK(Json.encodeToString(infoInstance))
             launch {
-                keepConnectedClient(clientInfo, comHelper, lostHostSharedFlow)
+                keepConnectedClient(clientInfo, netHelper, lostHostSharedFlow)
             }
         } catch (e: Exception) {
             Log.e(
@@ -184,7 +184,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     private suspend fun keepConnectedClient(
         clientInfo: ClientInfo,
-        comHelper: ComHelper,
+        netHelper: NetHelper,
         lostHostSharedFlow: MutableSharedFlow<ClientInfo>
     ) = withContext(Dispatchers.IO) {
         while (isActive) {
@@ -192,7 +192,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
             // Ping calculable ici
             try {
                 withTimeout(1000) {
-                    comHelper.writeLineACK("Checking connection")
+                    netHelper.writeLineACK("Checking connection")
                 }
             } catch (e: TimeoutCancellationException) {
                 lostHostSharedFlow.emit(clientInfo)

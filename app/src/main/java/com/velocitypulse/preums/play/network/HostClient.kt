@@ -83,15 +83,15 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
                 socket = Socket(serverInfo.ip, serverInfo.port)
                 Log.i(TAG, "socket opened")
 
-                val comHelper = ComHelper(socket)
+                val netHelper = NetHelper(socket)
                 val infoMessage = Json.encodeToString(clientInfo)
 
                 Log.i(
                     TAG,
                     "Sending [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
                 )
-                comHelper.writeLineACK(infoMessage)
-                val response = comHelper.readLineACK()
+                netHelper.writeLineACK(infoMessage)
+                val response = netHelper.readLineACK()
 
                 Log.i(TAG, "Received response from server: $response")
                 // TODO : Continue here

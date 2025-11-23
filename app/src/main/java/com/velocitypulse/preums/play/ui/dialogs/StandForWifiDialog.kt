@@ -37,7 +37,7 @@ fun StandForWifiDialog() {
                     .wrapContentSize(Alignment.Center),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Waiting for Wi-Fi connection...")
+                Text(text = "Waiting Wi-Fi connection...")
                 Spacer(modifier = Modifier.height(16.dp))
                 CircularProgressIndicator(
                     modifier = Modifier.width(64.dp),

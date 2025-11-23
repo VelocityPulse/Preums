@@ -69,18 +69,18 @@ abstract class Host(val networkInfos: NetworkInfos) {
         return null
     }
 
-    protected open class ComHelper(socket: Socket) {
+    protected open class NetHelper(socket: Socket) {
 
         companion object {
             private const val ACKNOWLEDGE = "ACK"
-            private const val TAG = "ComHelper"
+            private const val TAG = "NetHelper"
         }
 
         private val receiveChannel: BufferedReader = socket.openReadChannel()
         private val sendChannel: BufferedWriter = socket.openWriteChannel()
 
         init {
-            Log.i(TAG, "ComHelper with socket: $socket")
+            Log.i(TAG, "With socket: $socket")
         }
 
         private fun Socket.openReadChannel(): BufferedReader {
@@ -133,7 +133,7 @@ abstract class Host(val networkInfos: NetworkInfos) {
         suspend fun readLineACK(): String = withContext(Dispatchers.IO) {
             Log.i(TAG, "Read line ACK")
             while (!receiveChannel.ready()) {
-                delay(150)
+                delay(50)
             }
 
             receiveChannel.readLine().also {

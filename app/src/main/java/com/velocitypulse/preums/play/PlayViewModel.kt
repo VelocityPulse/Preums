@@ -7,11 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.velocitypulse.preums.core.di.getKoinInstance
 import com.velocitypulse.preums.play.network.Host
 import com.velocitypulse.preums.play.network.HostClient
 import com.velocitypulse.preums.play.network.HostServer
 import com.velocitypulse.preums.play.network.NetworkInfos
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,12 +35,16 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
 
+    private val _serverList = MutableStateFlow<Set<InstanceInfo>>(emptySet())
+    val serverList: StateFlow<Set<InstanceInfo>> get() = _serverList
+
     private var hostInstance: Host? = null
 
     fun onWifiWarningDismissed() {
         playState = PlayState.StandingForWifi
         startWifiConnectionSurvey()
     }
+
 
     private fun startWifiConnectionSurvey() {
         viewModelScope.launch {
@@ -56,7 +62,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     }
 
     fun onStartHostServer(context: Context) {
-        playState = PlayState.ServerResearchAndConfigure
+        playState = PlayState.ServerResearchAndList
         hostInstance = getKoinInstance<HostServer>().apply {
             viewModelScope.launch {
                 startServer(
@@ -89,13 +95,18 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         }
     }
 
-    fun onStartDiscovery(context: Context) {
-        playState = PlayState.Discovering
+    fun onStartHostClient(context: Context) {
+        playState = PlayState.ClientResearchAndList
         hostInstance = getKoinInstance<HostClient>().apply {
-            viewModelScope.launch { startDiscovering() }
-//            synchronisedStartDiscovery(context)
+            viewModelScope.launch(Dispatchers.IO) { startDiscovering(context) }
+            viewModelScope.launch(Dispatchers.IO) {
+                discoveredItems.collect { servers ->
+                _serverList.value = servers
+            } }
         }
     }
+
+    fun onServerSelected(name: String) {}
 
     fun onCancelResearchDialog() {
         hostInstance?.stopProcedures()
@@ -113,7 +124,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     fun onResume(context: Context) {
         when (playState) {
-            is PlayState.ServerResearchAndConfigure -> {
+            is PlayState.ServerResearchAndList -> {
                 viewModelScope.launch {
                     (hostInstance as HostServer).startServer(
                         context,
@@ -124,8 +135,8 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
                 }
             }
 
-            is PlayState.Discovering -> {
-                viewModelScope.launch { (hostInstance as HostClient).startDiscovering() }
+            is PlayState.ClientResearchAndList -> {
+                viewModelScope.launch { (hostInstance as HostClient).startDiscovering(context) }
             }
 
             else -> {}

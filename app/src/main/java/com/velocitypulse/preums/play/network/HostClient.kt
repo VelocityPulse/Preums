@@ -1,11 +1,15 @@
 package com.velocitypulse.preums.play.network
 
+import android.content.Context
 import android.util.Log
 import com.velocitypulse.preums.core.di.ApplicationInitializer
 import com.velocitypulse.preums.play.ClientInfo
+import com.velocitypulse.preums.play.InstanceInfo
 import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.isActive
@@ -21,16 +25,14 @@ private const val TAG = "HostClient"
 
 class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
 
-    private var discoveringJob: Job? = null
-    private var connectionJob: Job? = null
-
-    private val clientInfo = ClientInfo(ApplicationInitializer.deviceName)
-
     private val discoveredServers = mutableSetOf<ServerInfo>()
 
-    suspend fun startDiscovering() {
+    private val _discoveredServers = MutableStateFlow<Set<InstanceInfo>>(emptySet())
+    val discoveredItems = _discoveredServers.asStateFlow()
+
+    suspend fun startDiscovering(context: Context) {
         receiveBroadcast().collect {
-            requestInformation(it)
+            requestInformation(it, context)
         }
     }
 
@@ -56,7 +58,7 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
                     if (discoveredServers.add(serverInfo)) {
                         trySend(serverInfo)
                     } else {
-                        Log.w(TAG, "Duplicated host instance: $serverInfo")
+                        Log.e(TAG, "Duplicated host instance: $serverInfo")
                     }
                 } catch (e: Exception) {
                     Log.w(
@@ -74,7 +76,7 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
         }
     }.flowOn(Dispatchers.IO)
 
-    private suspend fun requestInformation(serverInfo: ServerInfo) {
+    private suspend fun requestInformation(serverInfo: ServerInfo, context: Context) {
         withContext(Dispatchers.IO) {
             Log.i(TAG, "Connecting to server at ${serverInfo.ip}:${serverInfo.port}")
 
@@ -84,7 +86,12 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
                 Log.i(TAG, "socket opened")
 
                 val netHelper = NetHelper(socket)
-                val infoMessage = Json.encodeToString(clientInfo)
+                val infoMessage = Json.encodeToString(
+                    ClientInfo(
+                        ApplicationInitializer.deviceName,
+                        getLocalIP(context)!!.hostAddress!!
+                    )
+                )
 
                 Log.i(
                     TAG,
@@ -93,16 +100,29 @@ class HostClient(networkInfos: NetworkInfos) : Host(networkInfos) {
                 netHelper.writeLineACK(infoMessage)
                 val response = netHelper.readLineACK()
 
-                Log.i(TAG, "Received response from server: $response")
-                // TODO : Continue here
+                val instance: InstanceInfo = Json.decodeFromString<InstanceInfo>(response)
+                Log.i(TAG, "ServerInstance received: $instance")
+                _discoveredServers.value += instance
+
+                // wait
+                // TODO keepConnectedClient
+                // TODO check that everybody correctly updates their values
+//                while (true) {
+//                    Thread.sleep(1000)
+//                }
+
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to contact server: ${e.message}")
                 e.printStackTrace()
             } finally {
+                Log.i(TAG, "socket closed")
                 socket?.close()
             }
         }
     }
+
+    // TODO : Now that we have many instance info, maybe we should regularely ping them to
+    // be sure to keep them alive
 
     override fun stopProcedures() {
         // TODO

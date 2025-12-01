@@ -85,7 +85,7 @@ fun ServerResearchAndConfigureDialogPreview() {
         PlayScreen(
             navController = rememberNavController(),
             viewModel = koinViewModel<PlayViewModel>().apply {
-                onPreview(PlayState.ServerResearchAndConfigure)
+                onPreview(PlayState.ServerResearchAndList)
             }
         )
     }

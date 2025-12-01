@@ -66,7 +66,7 @@ fun PlayScreen(state: PlayState, buzzClick: () -> Unit) {
             HostSelectionDialog()
         }
 
-        is PlayState.ServerResearchAndConfigure -> {
+        is PlayState.ServerResearchAndList -> {
             ServerResearchDialog()
         }
 

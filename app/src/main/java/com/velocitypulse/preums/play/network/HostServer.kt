@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -40,6 +41,11 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
     private var acceptingServerSocket: ServerSocket? = null
     private var serverJob: Job? = null
 
+    private val _discoveredHosts: MutableStateFlow<Set<ClientInfo>> = MutableStateFlow(emptySet())
+    val discoveredHosts: StateFlow<Set<ClientInfo>> get() = _discoveredHosts
+    // Todo : Transform the host server into the same flow system than hostclient
+
+
     val hostInstances: Flow<ServerInfo> = flow {
         while (true) {
             delay(500)
@@ -48,7 +54,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
     suspend fun startServer(
         context: Context,
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
+        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>, // remove this
         lostHostSharedFlow: MutableSharedFlow<ClientInfo>,
         eventMessage: MutableStateFlow<EventState>
     ) {
@@ -187,16 +193,17 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
         netHelper: NetHelper,
         lostHostSharedFlow: MutableSharedFlow<ClientInfo>
     ) = withContext(Dispatchers.IO) {
-        while (isActive) {
-            delay(3000)
-            // Ping calculable ici
-            try {
+        try {
+            while (isActive) {
+                delay(3000)
+                // Ping calculable ici
                 withTimeout(1000) {
                     netHelper.writeLineACK("Checking connection")
                 }
-            } catch (e: TimeoutCancellationException) {
-                lostHostSharedFlow.emit(clientInfo)
             }
+        } catch (e: TimeoutCancellationException) {
+            Log.e(TAG, "Client disconnected")
+            lostHostSharedFlow.emit(clientInfo)
         }
     }
 

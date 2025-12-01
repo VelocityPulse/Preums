@@ -47,7 +47,7 @@ fun HostSelectionDialog(viewModel: PlayViewModel = koinViewModel()) {
                     .padding(horizontal = 8.dp)
                     .clickable {
 //                            dismissed = true
-                        viewModel.onStartDiscovery(context)
+                        viewModel.onStartHostClient(context)
                     }
             )
         },

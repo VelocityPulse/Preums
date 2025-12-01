@@ -1,7 +1,6 @@
 package com.velocitypulse.preums.play.ui.dialogs
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import com.velocitypulse.preums.play.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.ui.components.WifiWarningDialog
@@ -12,10 +11,10 @@ fun AppDialogManager(viewModel: PlayViewModel = koinViewModel()) {
     val state: PlayState = viewModel.playState
 
     when (state) {
-        PlayState.WiFiWarning -> { WifiWarningDialog() }
+        PlayState.WiFiWarning -> WifiWarningDialog()
         PlayState.StandingForWifi -> StandForWifiDialog()
-        PlayState.Discovering -> {}
-        PlayState.ServerResearchAndConfigure -> ServerResearchDialog(viewModel)
+        PlayState.ClientResearchAndList -> ClientResearchDialog()
+        PlayState.ServerResearchAndList -> ServerResearchDialog(viewModel)
         PlayState.NetFailure -> NetFailureDialog()
         PlayState.Playing -> {}
         PlayState.MenuSelection -> {}

@@ -10,7 +10,8 @@ data class ServerInfo(
 
 @Serializable
 data class ClientInfo(
-    val name: String
+    val name: String,
+    val ip: String
 )
 
 @Serializable

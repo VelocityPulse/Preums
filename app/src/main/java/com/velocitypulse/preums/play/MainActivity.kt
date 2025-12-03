@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         Log.d("debugPreums", "Activity onResume")
         val playViewModel = get<PlayViewModel>()
-        playViewModel.onResume(this)
+        playViewModel.onResume()
         super.onResume()
     }
 

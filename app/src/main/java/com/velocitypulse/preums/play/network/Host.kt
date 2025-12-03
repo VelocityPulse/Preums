@@ -20,7 +20,7 @@ import java.net.SocketException
 
 private const val TAG = "Host"
 
-abstract class Host(val networkInfos: NetworkInfos) {
+abstract class Host() {
 
     companion object {
 

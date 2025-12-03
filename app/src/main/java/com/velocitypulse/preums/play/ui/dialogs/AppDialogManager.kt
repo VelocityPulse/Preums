@@ -11,12 +11,12 @@ fun AppDialogManager(viewModel: PlayViewModel = koinViewModel()) {
     val state: PlayState = viewModel.playState
 
     when (state) {
-        PlayState.WiFiWarning -> WifiWarningDialog()
-        PlayState.StandingForWifi -> StandForWifiDialog()
-        PlayState.ClientResearchAndList -> ClientResearchDialog()
-        PlayState.ServerResearchAndList -> ServerResearchDialog(viewModel)
-        PlayState.NetFailure -> NetFailureDialog()
-        PlayState.Playing -> {}
-        PlayState.MenuSelection -> {}
+        is PlayState.WiFiWarning -> WifiWarningDialog()
+        is PlayState.StandingForWifi -> StandForWifiDialog()
+        is PlayState.ClientResearchAndList -> ClientResearchDialog()
+        is PlayState.ServerResearchAndList -> ServerResearchDialog(viewModel)
+        is PlayState.NetFailure -> NetFailureDialog()
+        is PlayState.Playing -> {}
+        is PlayState.MenuSelection -> {}
     }
 }

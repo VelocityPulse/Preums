@@ -20,5 +20,6 @@ data class InstanceInfo(
     val playersCount: Int,
     val isLocked: Boolean,
     var password: String?,
-    val primaryColor: Int
+    val primaryColor: Int,
+    val serverInfo: ServerInfo
 )

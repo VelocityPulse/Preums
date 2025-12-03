@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.velocitypulse.preums.core.di.getKoinInstance
 import com.velocitypulse.preums.play.network.Host
 import com.velocitypulse.preums.play.network.HostClient
@@ -24,13 +23,8 @@ private const val TAG = "PlayViewModel"
 
 class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
-    var playState by mutableStateOf<PlayState>(PlayState.WiFiWarning)
-        private set
-
-    // SERVER
-    private val _discoveredHostSharedFlow = MutableSharedFlow<ClientInfo>()
-    private val _lostHostSharedFlow = MutableSharedFlow<ClientInfo>()
-    private val _eventStateFlow = MutableStateFlow(Host.EventState.NO_EVENT)
+    private val _playState = mutableStateOf<PlayState>(PlayState.WiFiWarning)
+    val playState: PlayState by _playState
 
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
@@ -41,7 +35,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     private var hostInstance: Host? = null
 
     fun onWifiWarningDismissed() {
-        playState = PlayState.StandingForWifi
+        _playState.value = PlayState.StandingForWifi
         startWifiConnectionSurvey()
     }
 
@@ -50,9 +44,9 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         viewModelScope.launch {
             networkInfos.wifiNetworkAvailable.collect { network ->
                 if (network == null && hostInstance == null) {
-                    playState = PlayState.StandingForWifi
-                } else if (network != null && playState == PlayState.StandingForWifi) {
-                    playState = PlayState.MenuSelection
+                    _playState.value = PlayState.StandingForWifi
+                } else if (network != null && _playState.value == PlayState.StandingForWifi) {
+                    _playState.value = PlayState.MenuSelection
                 }
             }
         }
@@ -61,44 +55,42 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     fun onBuzzClick(context: Context) {
     }
 
-    fun onStartHostServer(context: Context) {
-        playState = PlayState.ServerResearchAndList
+    fun onStartHostServer() {
+        _playState.value = PlayState.ServerResearchAndList()
         hostInstance = getKoinInstance<HostServer>().apply {
             viewModelScope.launch {
-                startServer(
-                    context,
-                    _discoveredHostSharedFlow,
-                    _lostHostSharedFlow,
-                    _eventStateFlow
-                )
+                startServer()
 
                 launch {
-                    _eventStateFlow.collect { event ->
+                    eventMessage.collect { event ->
                         if (event == Host.EventState.PORT_FAILURE) {
-                            playState = PlayState.NetFailure
+                            _playState.value = PlayState.NetFailure
                             stopProcedures()
                         }
                     }
                 }
 
                 launch {
-                    _discoveredHostSharedFlow.collect { clientInfo ->
-                        _clientsList.value += clientInfo
-                    }
-                }
-                launch {
-                    _lostHostSharedFlow.collect { clientInfo ->
-                        _clientsList.value -= clientInfo
+                    clients.collect { clientsInfo ->
+                        Log.i(TAG, "New client: $clientsInfo")
+                        when (val state = _playState.value) {
+                            is PlayState.ServerResearchAndList -> {
+                                _playState.value = state.copy(clients = clientsInfo)
+                            }
+
+                            else -> playState
+                        }
+
                     }
                 }
             }
         }
     }
 
-    fun onStartHostClient(context: Context) {
-        playState = PlayState.ClientResearchAndList
+    fun onStartHostClient() {
+        _playState.value = PlayState.ClientResearchAndList
         hostInstance = getKoinInstance<HostClient>().apply {
-            viewModelScope.launch(Dispatchers.IO) { startDiscovering(context) }
+            viewModelScope.launch(Dispatchers.IO) { startClient() }
             viewModelScope.launch(Dispatchers.IO) {
                 discoveredItems.collect { servers ->
                 _serverList.value = servers
@@ -110,7 +102,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     fun onCancelResearchDialog() {
         hostInstance?.stopProcedures()
-        playState = PlayState.MenuSelection
+        _playState.value = PlayState.MenuSelection
     }
 
     fun onDestroy() {
@@ -119,24 +111,21 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     fun onPause() {
         Log.i(TAG, "onPause $hostInstance")
-        hostInstance?.stopProcedures()
+        // Not really ?
+//        hostInstance?.stopProcedures()
     }
 
-    fun onResume(context: Context) {
-        when (playState) {
+    fun onResume() {
+        // TODO : Re-think entirely all this section
+        when (_playState.value) {
             is PlayState.ServerResearchAndList -> {
                 viewModelScope.launch {
-                    (hostInstance as HostServer).startServer(
-                        context,
-                        _discoveredHostSharedFlow,
-                        _lostHostSharedFlow,
-                        _eventStateFlow
-                    )
+                    (hostInstance as HostServer).startServer() // TODO : To recheck
                 }
             }
 
             is PlayState.ClientResearchAndList -> {
-                viewModelScope.launch { (hostInstance as HostClient).startDiscovering(context) }
+                viewModelScope.launch { (hostInstance as HostClient).startClient() }
             }
 
             else -> {}
@@ -145,6 +134,6 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     @VisibleForTesting
     fun onPreview(state: PlayState) {
-        playState = state
+        _playState.value = state
     }
 }

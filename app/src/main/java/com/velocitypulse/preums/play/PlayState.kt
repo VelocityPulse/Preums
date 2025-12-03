@@ -7,7 +7,9 @@ sealed class PlayState {
 
     data object ClientResearchAndList : PlayState()
 
-    data object ServerResearchAndList : PlayState()
+    data class ServerResearchAndList(
+        val clients: Set<ClientInfo> = emptySet()
+    ) : PlayState()
     data object NetFailure : PlayState()
     data object Playing : PlayState()
 }

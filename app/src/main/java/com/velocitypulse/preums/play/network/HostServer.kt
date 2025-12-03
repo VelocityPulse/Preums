@@ -10,13 +10,14 @@ import com.velocitypulse.preums.play.ServerInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,52 +30,42 @@ import java.net.DatagramSocket
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import kotlin.coroutines.coroutineContext
 import kotlin.random.Random
 
 private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
 private const val TAG = "HostServer"
 
-class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
+class HostServer(private val context: Context) : Host() {
 
     private var broadcastSocket: DatagramSocket? = null
     private var acceptingServerSocket: ServerSocket? = null
     private var serverJob: Job? = null
+    private lateinit var serverInfo: ServerInfo
 
-    private val _discoveredHosts: MutableStateFlow<Set<ClientInfo>> = MutableStateFlow(emptySet())
-    val discoveredHosts: StateFlow<Set<ClientInfo>> get() = _discoveredHosts
-    // Todo : Transform the host server into the same flow system than hostclient
+    private val _clients: MutableStateFlow<Set<ClientInfo>> = MutableStateFlow(emptySet())
+    val clients: StateFlow<Set<ClientInfo>> get() = _clients
 
+    private val _eventMessage = MutableSharedFlow<EventState>(replay = 0, extraBufferCapacity = 1)
+    val eventMessage: SharedFlow<EventState> = _eventMessage.asSharedFlow()
 
-    val hostInstances: Flow<ServerInfo> = flow {
-        while (true) {
-            delay(500)
-        }
-    }
-
-    suspend fun startServer(
-        context: Context,
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>, // remove this
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        eventMessage: MutableStateFlow<EventState>
-    ) {
-        serverJob = CoroutineScope(coroutineContext).launch {
+    suspend fun startServer() {
+        serverJob = CoroutineScope(currentCoroutineContext()).launch {
             launch {
-                startSendBroadcast(context)
+                startSendBroadcast()
                 Log.i(TAG, "Broadcast coroutine leaving")
             }
             launch {
-                startServerInfo(discoveredHostSharedFlow, lostHostSharedFlow, eventMessage)
+                startServerInfo()
                 Log.i(TAG, "Server coroutine leaving")
             }
         }
     }
 
-    private suspend fun startSendBroadcast(context: Context) = withContext(Dispatchers.IO) {
+    private suspend fun startSendBroadcast() = withContext(Dispatchers.IO) {
         val address = getBroadcast(getLocalIP(context)!!)!!
         Log.i(TAG, "Starting broadcast with $address")
 
-        val serverInfo = ServerInfo(
+        serverInfo = ServerInfo(
             getLocalIP(context)!!.hostAddress!!,
             CONNECTION_PORT
         )
@@ -92,7 +83,6 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
                 val packet = DatagramPacket(buffer, buffer.size, address, DISCOVERING_PORT)
 
                 while (isActive) {
-                    Log.i(TAG, "Sending broadcast")
                     socket.send(packet)
                     Log.i(TAG, "Broadcast sent $address: $message")
                     delay(1000)
@@ -107,11 +97,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
         }
     }
 
-    private suspend fun startServerInfo(
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        eventMessage: MutableStateFlow<EventState>
-    ) = withContext(Dispatchers.IO) {
+    private suspend fun startServerInfo() = withContext(Dispatchers.IO) {
         Log.i(TAG, "Server starting on port $CONNECTION_PORT")
 
         for (attempts in 0..10) {
@@ -123,7 +109,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
             } catch (e: BindException) {
                 Log.e(TAG, "Bind failed: ${e.message}")
                 delay(100)
-                eventMessage.value = EventState.PORT_FAILURE
+                _eventMessage.emit(EventState.PORT_FAILURE)
                 return@withContext
             }
         }
@@ -140,7 +126,7 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
 
                 launch {
                     Log.i(TAG, "Client connected: ${clientSocket.inetAddress.hostAddress}")
-                    handleClient(clientSocket, discoveredHostSharedFlow, lostHostSharedFlow)
+                    handleClient(clientSocket)
                 }
             }
             serverSocket.close()
@@ -148,35 +134,32 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
         }
     }
 
-    private suspend fun handleClient(
-        clientSocket: Socket,
-        discoveredHostSharedFlow: MutableSharedFlow<ClientInfo>,
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
-    ) = withContext(Dispatchers.IO) {
+    private suspend fun handleClient(clientSocket: Socket) = withContext(Dispatchers.IO) {
         Log.i(TAG, "Handling client")
 
-        val netHelper = NetHelper(clientSocket)
+        val clientConnection = NetHelper(clientSocket)
 
         Log.i(TAG, "Waiting for client info...")
-        val message = netHelper.readLineACK()
+        val message = clientConnection.readLineACK()
         Log.i(TAG, "Client info received: $message")
 
         try {
             val clientInfo = Json.decodeFromString<ClientInfo>(message)
 
-            discoveredHostSharedFlow.emit(clientInfo)
+            _clients.update { it + clientInfo }
 
             val infoInstance = InstanceInfo(
                 name = "partie1",
                 playersCount = 5,
                 isLocked = false,
                 primaryColor = Color.Blue.toArgb(),
-                password = null
+                password = null,
+                serverInfo = serverInfo
             )
 
-            netHelper.writeLineACK(Json.encodeToString(infoInstance))
+            clientConnection.writeLineACK(Json.encodeToString(infoInstance))
             launch {
-                keepConnectedClient(clientInfo, netHelper, lostHostSharedFlow)
+                keepConnectedClient(clientInfo, clientConnection)
             }
         } catch (e: Exception) {
             Log.e(
@@ -188,24 +171,21 @@ class HostServer(networkInfos: NetworkInfos) : Host(networkInfos) {
         }
     }
 
-    private suspend fun keepConnectedClient(
-        clientInfo: ClientInfo,
-        netHelper: NetHelper,
-        lostHostSharedFlow: MutableSharedFlow<ClientInfo>
-    ) = withContext(Dispatchers.IO) {
-        try {
-            while (isActive) {
-                delay(3000)
-                // Ping calculable ici
-                withTimeout(1000) {
-                    netHelper.writeLineACK("Checking connection")
+    private suspend fun keepConnectedClient(clientInfo: ClientInfo, clientConnection: NetHelper) =
+        withContext(Dispatchers.IO) {
+            try {
+                while (isActive) {
+                    delay(3000)
+                    // Ping calculable ici
+                    withTimeout(1000) {
+                        clientConnection.writeLineACK("Checking connection")
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in keepConnectedClient: ${e.message}")
+                _clients.update { it - clientInfo }
             }
-        } catch (e: TimeoutCancellationException) {
-            Log.e(TAG, "Client disconnected")
-            lostHostSharedFlow.emit(clientInfo)
         }
-    }
 
     override fun stopProcedures() {
         Log.i(TAG, "Stopping procedures")

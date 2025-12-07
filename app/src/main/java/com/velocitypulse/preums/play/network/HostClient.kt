@@ -24,6 +24,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
+import kotlin.printStackTrace
 
 private const val TAG = "HostClient"
 
@@ -53,12 +54,15 @@ class HostClient(private val context: Context) : Host() {
                 socket.receive(packet)
 
                 val message = String(packet.data, 0, packet.length)
-                Log.i(TAG, "Broadcast received: $message")
 
                 try {
                     val serverInfo = Json.decodeFromString<ServerInfo>(message)
-                    Log.i(TAG, "HostInstance received: $serverInfo")
-                    requestInformation(serverInfo)
+                    if (_servers.value.any { it.serverInfo == serverInfo }) {
+                        continue
+                    }
+
+                    Log.i(TAG, "Broadcast HostInstance received: $serverInfo")
+                    createSocket(serverInfo)
                 } catch (e: Exception) {
                     Log.w(
                         TAG,
@@ -75,7 +79,7 @@ class HostClient(private val context: Context) : Host() {
         }
     }
 
-    private suspend fun requestInformation(serverInfo: ServerInfo) {
+    private suspend fun createSocket(serverInfo: ServerInfo) {
         withContext(Dispatchers.IO) {
             Log.i(TAG, "Connecting to server at ${serverInfo.ip}:${serverInfo.port}")
 
@@ -85,6 +89,20 @@ class HostClient(private val context: Context) : Host() {
                 Log.i(TAG, "socket opened")
 
                 val netHelper = NetHelper(socket)
+                sendClientInfo(netHelper)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to contact server: ${e.message}")
+                e.printStackTrace()
+            } finally {
+                Log.i(TAG, "socket closed")
+                socket?.close()
+            }
+        }
+    }
+
+    private suspend fun sendClientInfo(netHelper: NetHelper) {
+        withContext(Dispatchers.IO) {
+            try {
                 val infoMessage = Json.encodeToString(
                     ClientInfo(
                         ApplicationInitializer.deviceName,
@@ -92,10 +110,6 @@ class HostClient(private val context: Context) : Host() {
                     )
                 )
 
-                Log.i(
-                    TAG,
-                    "Sending [$infoMessage] to server at ${serverInfo.ip}:${serverInfo.port}"
-                )
                 netHelper.writeLineACK(infoMessage)
                 val response = netHelper.readLineACK()
 
@@ -108,7 +122,7 @@ class HostClient(private val context: Context) : Host() {
                 e.printStackTrace()
             } finally {
                 Log.i(TAG, "socket closed")
-                socket?.close()
+                netHelper.socket.close()
             }
         }
     }

@@ -69,7 +69,7 @@ abstract class Host() {
         return null
     }
 
-    protected open class NetHelper(socket: Socket) {
+    protected open class NetHelper(val socket: Socket) {
 
         companion object {
             private const val ACKNOWLEDGE = "ACK"
@@ -106,7 +106,7 @@ abstract class Host() {
                                 Log.i(TAG, "Acknowledgement received")
                                 return@withTimeout true
                             } else {
-                                Log.i(TAG, "Not acknowledged, received $line")
+                                Log.e(TAG, "Not acknowledged, received $line")
                             }
                         } else {
                             Log.i(TAG, "Waiting ACK...")
@@ -117,7 +117,7 @@ abstract class Host() {
                     false
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Error in waitAcknowledged: ${e.stackTraceToString()}")
+                Log.e(TAG, "Error in waitAcknowledged: ${e.stackTraceToString()}")
                 false
             }
         }
@@ -125,13 +125,11 @@ abstract class Host() {
         suspend fun writeLineACK(message: String, sendingFrequency: Long = 1000) =
             withContext(Dispatchers.IO) {
                 do {
-                    Log.i(TAG, "Write line ACK [$message]")
                     sendChannel.writeLine(message)
                 } while (!receiveChannel.waitAcknowledged(sendingFrequency))
             }
 
         suspend fun readLineACK(): String = withContext(Dispatchers.IO) {
-            Log.i(TAG, "Read line ACK")
             while (!receiveChannel.ready()) {
                 delay(50)
             }

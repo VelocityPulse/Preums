@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.network
+package com.velocitypulse.preums.play.network.discovery
 
 import android.content.Context
 import android.util.Log
@@ -6,6 +6,7 @@ import com.velocitypulse.preums.core.di.ApplicationInitializer
 import com.velocitypulse.preums.play.ClientInfo
 import com.velocitypulse.preums.play.InstanceInfo
 import com.velocitypulse.preums.play.ServerInfo
+import com.velocitypulse.preums.play.network.core.NetHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,11 +25,10 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
-import kotlin.printStackTrace
 
-private const val TAG = "HostClient"
+private const val TAG = "NetworkDiscoveryClient"
 
-class HostClient(private val context: Context) : Host() {
+class NetworkDiscoveryClient(private val context: Context) : NetworkBase() {
 
     private var clientJob: Job? = null
 

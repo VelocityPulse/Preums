@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.network
+package com.velocitypulse.preums.play.network.core
 
 import android.content.Context
 import android.net.ConnectivityManager

@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play.network
+package com.velocitypulse.preums.play.network.discovery
 
 import android.content.Context
 import android.util.Log
@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.velocitypulse.preums.play.ClientInfo
 import com.velocitypulse.preums.play.InstanceInfo
 import com.velocitypulse.preums.play.ServerInfo
+import com.velocitypulse.preums.play.network.core.NetHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,9 +34,9 @@ import java.net.SocketException
 import kotlin.random.Random
 
 private val CONNECTION_PORT = Random.nextInt(from = 49151, until = 65534)
-private const val TAG = "HostServer"
+private const val TAG = "NetworkDiscoveryServer"
 
-class HostServer(private val context: Context) : Host() {
+class NetworkDiscoveryServer(private val context: Context) : NetworkBase() {
 
     private var broadcastSocket: DatagramSocket? = null
     private var acceptingServerSocket: ServerSocket? = null

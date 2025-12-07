@@ -4,16 +4,14 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.velocitypulse.preums.core.di.getKoinInstance
-import com.velocitypulse.preums.play.network.Host
-import com.velocitypulse.preums.play.network.HostClient
-import com.velocitypulse.preums.play.network.HostServer
-import com.velocitypulse.preums.play.network.NetworkInfos
+import com.velocitypulse.preums.play.network.discovery.NetworkBase
+import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryClient
+import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryServer
+import com.velocitypulse.preums.play.network.core.NetworkInfos
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -32,7 +30,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     private val _serverList = MutableStateFlow<Set<InstanceInfo>>(emptySet())
     val serverList: StateFlow<Set<InstanceInfo>> get() = _serverList
 
-    private var hostInstance: Host? = null
+    private var hostInstance: NetworkBase? = null
 
     fun onWifiWarningDismissed() {
         _playState.value = PlayState.StandingForWifi
@@ -57,13 +55,13 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     fun onStartHostServer() {
         _playState.value = PlayState.ServerResearchAndList()
-        hostInstance = getKoinInstance<HostServer>().apply {
+        hostInstance = getKoinInstance<NetworkDiscoveryServer>().apply {
             viewModelScope.launch {
                 startServer()
 
                 launch {
                     eventMessage.collect { event ->
-                        if (event == Host.EventState.PORT_FAILURE) {
+                        if (event == NetworkBase.EventState.PORT_FAILURE) {
                             _playState.value = PlayState.NetFailure
                             stopProcedures()
                         }
@@ -89,7 +87,7 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
 
     fun onStartHostClient() {
         _playState.value = PlayState.ClientResearchAndList
-        hostInstance = getKoinInstance<HostClient>().apply {
+        hostInstance = getKoinInstance<NetworkDiscoveryClient>().apply {
             viewModelScope.launch(Dispatchers.IO) { startClient() }
             viewModelScope.launch(Dispatchers.IO) {
                 discoveredItems.collect { servers ->
@@ -120,12 +118,12 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         when (_playState.value) {
             is PlayState.ServerResearchAndList -> {
                 viewModelScope.launch {
-                    (hostInstance as HostServer).startServer() // TODO : To recheck
+                    (hostInstance as NetworkDiscoveryServer).startServer() // TODO : To recheck
                 }
             }
 
             is PlayState.ClientResearchAndList -> {
-                viewModelScope.launch { (hostInstance as HostClient).startClient() }
+                viewModelScope.launch { (hostInstance as NetworkDiscoveryClient).startClient() }
             }
 
             else -> {}

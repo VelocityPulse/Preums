@@ -4,9 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.velocitypulse.preums.play.ClientInfo
-import com.velocitypulse.preums.play.InstanceInfo
-import com.velocitypulse.preums.play.ServerInfo
+import com.velocitypulse.preums.play.network.ClientInfo
+import com.velocitypulse.preums.play.network.ServerInfo
+import com.velocitypulse.preums.play.network.ServerAddress
 import com.velocitypulse.preums.play.network.core.NetHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +41,7 @@ class NetworkDiscoveryServer(private val context: Context) : NetworkBase() {
     private var broadcastSocket: DatagramSocket? = null
     private var acceptingServerSocket: ServerSocket? = null
     private var serverJob: Job? = null
-    private lateinit var serverInfo: ServerInfo
+    private lateinit var serverAddress: ServerAddress
 
     private val _clients: MutableStateFlow<Set<ClientInfo>> = MutableStateFlow(emptySet())
     val clients: StateFlow<Set<ClientInfo>> get() = _clients
@@ -66,12 +66,12 @@ class NetworkDiscoveryServer(private val context: Context) : NetworkBase() {
         val address = getBroadcast(getLocalIP(context)!!)!!
         Log.i(TAG, "Starting broadcast with $address")
 
-        serverInfo = ServerInfo(
+        serverAddress = ServerAddress(
             getLocalIP(context)!!.hostAddress!!,
             CONNECTION_PORT
         )
 
-        val message = Json.encodeToString(serverInfo)
+        val message = Json.encodeToString(serverAddress)
 
         broadcastSocket?.close()
         broadcastSocket = DatagramSocket()
@@ -149,13 +149,13 @@ class NetworkDiscoveryServer(private val context: Context) : NetworkBase() {
 
             _clients.update { it + clientInfo }
 
-            val infoInstance = InstanceInfo(
+            val infoInstance = ServerInfo(
                 name = "partie1",
                 playersCount = 5,
                 isLocked = false,
                 primaryColor = Color.Blue.toArgb(),
                 password = null,
-                serverInfo = serverInfo
+                serverAddress = serverAddress
             )
 
             clientConnection.writeLineACK(Json.encodeToString(infoInstance))

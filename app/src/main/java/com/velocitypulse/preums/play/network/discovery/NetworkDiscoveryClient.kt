@@ -3,10 +3,12 @@ package com.velocitypulse.preums.play.network.discovery
 import android.content.Context
 import android.util.Log
 import com.velocitypulse.preums.core.di.ApplicationInitializer
-import com.velocitypulse.preums.play.ClientInfo
-import com.velocitypulse.preums.play.InstanceInfo
-import com.velocitypulse.preums.play.ServerInfo
+import com.velocitypulse.preums.play.network.ClientInfo
+import com.velocitypulse.preums.play.network.ServerInfo
+import com.velocitypulse.preums.play.network.ServerAddress
 import com.velocitypulse.preums.play.network.core.NetHelper
+import com.velocitypulse.preums.play.network.game.GameClient
+import com.velocitypulse.preums.play.network.game.TAG
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,8 +34,8 @@ class NetworkDiscoveryClient(private val context: Context) : NetworkBase() {
 
     private var clientJob: Job? = null
 
-    private val _servers = MutableStateFlow<Set<InstanceInfo>>(emptySet())
-    val discoveredItems = _servers.asStateFlow()
+    private val _discoveredServerInfos = MutableStateFlow<Set<ServerInfo>>(emptySet())
+    val discoveredServerInfos = _discoveredServerInfos.asStateFlow()
 
     suspend fun startClient() {
         clientJob = CoroutineScope(currentCoroutineContext()).launch {
@@ -56,13 +58,13 @@ class NetworkDiscoveryClient(private val context: Context) : NetworkBase() {
                 val message = String(packet.data, 0, packet.length)
 
                 try {
-                    val serverInfo = Json.decodeFromString<ServerInfo>(message)
-                    if (_servers.value.any { it.serverInfo == serverInfo }) {
+                    val serverAddress = Json.decodeFromString<ServerAddress>(message)
+                    if (_discoveredServerInfos.value.any { it.serverAddress == serverAddress }) {
                         continue
                     }
 
-                    Log.i(TAG, "Broadcast HostInstance received: $serverInfo")
-                    createSocket(serverInfo)
+                    Log.i(TAG, "Broadcast HostInstance received: $serverAddress")
+                    createSocket(serverAddress)
                 } catch (e: Exception) {
                     Log.w(
                         TAG,
@@ -79,55 +81,44 @@ class NetworkDiscoveryClient(private val context: Context) : NetworkBase() {
         }
     }
 
-    private suspend fun createSocket(serverInfo: ServerInfo) {
+    private suspend fun createSocket(serverAddress: ServerAddress) {
         withContext(Dispatchers.IO) {
-            Log.i(TAG, "Connecting to server at ${serverInfo.ip}:${serverInfo.port}")
+            Log.i(TAG, "Connecting to server at ${serverAddress.ip}:${serverAddress.port}")
 
-            var socket: Socket? = null
+            var netHelper: NetHelper? = null
             try {
-                socket = Socket(serverInfo.ip, serverInfo.port)
+                // Socket creation
+                netHelper = NetHelper(Socket(serverAddress.ip, serverAddress.port))
                 Log.i(TAG, "socket opened")
 
-                val netHelper = NetHelper(socket)
-                sendClientInfo(netHelper)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to contact server: ${e.message}")
-                e.printStackTrace()
-            } finally {
-                Log.i(TAG, "socket closed")
-                socket?.close()
-            }
-        }
-    }
-
-    private suspend fun sendClientInfo(netHelper: NetHelper) {
-        withContext(Dispatchers.IO) {
-            try {
-                val infoMessage = Json.encodeToString(
-                    ClientInfo(
-                        ApplicationInitializer.deviceName,
-                        getLocalIP(context)!!.hostAddress!!
-                    )
+                val clientInfo = ClientInfo(
+                    ApplicationInitializer.deviceName,
+                    getLocalIP(context)!!.hostAddress!!
                 )
+                val message = Json.encodeToString(clientInfo)
+                netHelper.writeLineACK(message)
 
-                netHelper.writeLineACK(infoMessage)
-                val response = netHelper.readLineACK()
 
-                val instance: InstanceInfo = Json.decodeFromString<InstanceInfo>(response)
-                Log.i(TAG, "ServerInstance received: $instance")
-                _servers.update { it + instance }
+                val serverInfoMessage = netHelper.readLineACK()
+
+                val serverInfo: ServerInfo = Json.decodeFromString<ServerInfo>(serverInfoMessage)
+                Log.i(TAG, "ServerInstance received: $serverInfo")
+                _servers.update { it + serverInfo }
+                // todo lancer un GameClient depuis le VM
 
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to contact server: ${e.message}")
                 e.printStackTrace()
             } finally {
                 Log.i(TAG, "socket closed")
-                netHelper.socket.close()
+                netHelper?.socket?.close()
             }
         }
     }
 
-    private suspend fun keepConnectedServer(serverInfo: ServerInfo, netHelper: NetHelper) =
+
+
+    private suspend fun keepConnectedServer(serverAddress: ServerAddress, netHelper: NetHelper) =
         withContext(Dispatchers.IO) {
             try {
                 while (isActive) {

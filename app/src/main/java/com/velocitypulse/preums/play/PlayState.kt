@@ -1,5 +1,7 @@
 package com.velocitypulse.preums.play
 
+import com.velocitypulse.preums.play.network.ClientInfo
+
 sealed class PlayState {
     data object WiFiWarning : PlayState()
     data object StandingForWifi : PlayState()

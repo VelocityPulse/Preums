@@ -24,26 +24,6 @@ abstract class NetworkBase() {
         PORT_FAILURE
     }
 
-    protected fun getLocalIPv6(context: Context): Inet6Address? {
-        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val props = manager.getLinkProperties(manager.activeNetwork)
-
-        return props?.linkAddresses?.find {
-            it.address is Inet6Address && it.flags == OsConstants.IFA_F_PERMANENT
-        }?.address as Inet6Address?
-    }
-
-    protected fun getLocalIP(context: Context): Inet4Address? {
-        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        val props = manager.getLinkProperties(manager.activeNetwork)
-
-        return props?.linkAddresses?.find {
-            it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
-        }?.address as Inet4Address?
-    }
-
     abstract fun stopProcedures()
 
     protected fun getBroadcast(inet4Address: Inet4Address): InetAddress? {
@@ -59,4 +39,24 @@ abstract class NetworkBase() {
         }
         return null
     }
+}
+
+fun getLocalIPv6(context: Context): Inet6Address? {
+    val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    val props = manager.getLinkProperties(manager.activeNetwork)
+
+    return props?.linkAddresses?.find {
+        it.address is Inet6Address && it.flags == OsConstants.IFA_F_PERMANENT
+    }?.address as Inet6Address?
+}
+
+fun getLocalIP(context: Context): Inet4Address? {
+    val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    val props = manager.getLinkProperties(manager.activeNetwork)
+
+    return props?.linkAddresses?.find {
+        it.address is Inet4Address && it.flags == OsConstants.IFA_F_PERMANENT
+    }?.address as Inet4Address?
 }

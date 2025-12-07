@@ -1,9 +1,9 @@
-package com.velocitypulse.preums.play
+package com.velocitypulse.preums.play.network
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ServerInfo(
+data class ServerAddress(
     val ip: String,
     val port: Int
 )
@@ -15,11 +15,11 @@ data class ClientInfo(
 )
 
 @Serializable
-data class InstanceInfo(
+data class ServerInfo(
     val name: String,
     val playersCount: Int,
     val isLocked: Boolean,
     var password: String?,
     val primaryColor: Int,
-    val serverInfo: ServerInfo
+    val serverAddress: ServerAddress
 )

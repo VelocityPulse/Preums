@@ -38,7 +38,7 @@ import org.koin.androidx.compose.koinViewModel
 fun ClientResearchDialog(
     viewModel: PlayViewModel = koinViewModel()
 ) {
-    val servers by viewModel.serverList.collectAsState()
+    val servers by viewModel.serverInfoList.collectAsState()
 
     AlertDialog(
         onDismissRequest = {},

@@ -7,10 +7,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.velocitypulse.preums.core.di.getKoinInstance
+import com.velocitypulse.preums.play.network.ClientInfo
+import com.velocitypulse.preums.play.network.ServerInfo
+import com.velocitypulse.preums.play.network.core.NetworkInfos
 import com.velocitypulse.preums.play.network.discovery.NetworkBase
 import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryClient
 import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryServer
-import com.velocitypulse.preums.play.network.core.NetworkInfos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,8 +29,8 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
 
-    private val _serverList = MutableStateFlow<Set<InstanceInfo>>(emptySet())
-    val serverList: StateFlow<Set<InstanceInfo>> get() = _serverList
+    private val _serverInfoList = MutableStateFlow<Set<ServerInfo>>(emptySet())
+    val serverInfoList: StateFlow<Set<ServerInfo>> get() = _serverInfoList
 
     private var hostInstance: NetworkBase? = null
 
@@ -90,9 +92,10 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         hostInstance = getKoinInstance<NetworkDiscoveryClient>().apply {
             viewModelScope.launch(Dispatchers.IO) { startClient() }
             viewModelScope.launch(Dispatchers.IO) {
-                discoveredItems.collect { servers ->
-                _serverList.value = servers
-            } }
+                discoveredServerInfos.collect { servers ->
+                    _serverInfoList.value = servers
+                }
+            }
         }
     }
 

@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
 
 private const val TAG = "GameClient"
 
-class GameClient(private val netHelper: NetHelper) {
+class GameClient(private val serverInfo: ServerInfo) {
 
 
 

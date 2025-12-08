@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
-import com.velocitypulse.preums.play.PlayState
+import com.velocitypulse.preums.play.ui.state.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.ui.PlayScreen
 import org.koin.androidx.compose.koinViewModel
@@ -81,7 +81,7 @@ fun ClientResearchDialog(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
-                    .clickable {  }
+                    .clickable { /* Close dialog */ }
             )
         }
     )

@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
-import com.velocitypulse.preums.play.PlayState
+import com.velocitypulse.preums.play.ui.state.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.ui.dialogs.AppDialogManager
 import com.velocitypulse.preums.play.ui.dialogs.HostSelectionDialog

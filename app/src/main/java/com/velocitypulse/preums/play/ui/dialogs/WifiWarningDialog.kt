@@ -1,11 +1,9 @@
-package com.velocitypulse.preums.play.ui.components
+package com.velocitypulse.preums.play.ui.dialogs
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.velocitypulse.preums.R
 import com.velocitypulse.preums.play.PlayViewModel

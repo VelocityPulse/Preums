@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.velocitypulse.preums.core.di.PreviewInitializerProvider
-import com.velocitypulse.preums.play.PlayState
+import com.velocitypulse.preums.play.ui.state.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
 import com.velocitypulse.preums.play.ui.PlayScreen
 import org.koin.androidx.compose.koinViewModel

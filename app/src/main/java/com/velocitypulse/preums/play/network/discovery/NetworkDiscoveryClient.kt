@@ -7,8 +7,6 @@ import com.velocitypulse.preums.play.network.ClientInfo
 import com.velocitypulse.preums.play.network.ServerInfo
 import com.velocitypulse.preums.play.network.ServerAddress
 import com.velocitypulse.preums.play.network.core.NetHelper
-import com.velocitypulse.preums.play.network.game.GameClient
-import com.velocitypulse.preums.play.network.game.TAG
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -98,14 +96,11 @@ class NetworkDiscoveryClient(private val context: Context) : NetworkBase() {
                 val message = Json.encodeToString(clientInfo)
                 netHelper.writeLineACK(message)
 
-
                 val serverInfoMessage = netHelper.readLineACK()
 
                 val serverInfo: ServerInfo = Json.decodeFromString<ServerInfo>(serverInfoMessage)
                 Log.i(TAG, "ServerInstance received: $serverInfo")
-                _servers.update { it + serverInfo }
-                // todo lancer un GameClient depuis le VM
-
+                _discoveredServerInfos.update { it + serverInfo }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to contact server: ${e.message}")
                 e.printStackTrace()

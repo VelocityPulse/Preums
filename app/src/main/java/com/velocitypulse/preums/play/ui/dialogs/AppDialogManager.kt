@@ -1,9 +1,8 @@
 package com.velocitypulse.preums.play.ui.dialogs
 
 import androidx.compose.runtime.Composable
-import com.velocitypulse.preums.play.PlayState
+import com.velocitypulse.preums.play.ui.state.PlayState
 import com.velocitypulse.preums.play.PlayViewModel
-import com.velocitypulse.preums.play.ui.components.WifiWarningDialog
 import org.koin.androidx.compose.koinViewModel
 
 @Composable

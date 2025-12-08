@@ -1,4 +1,4 @@
-package com.velocitypulse.preums.play
+package com.velocitypulse.preums.play.ui.state
 
 import com.velocitypulse.preums.play.network.ClientInfo
 

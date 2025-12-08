@@ -13,7 +13,11 @@ import com.velocitypulse.preums.play.network.core.NetworkInfos
 import com.velocitypulse.preums.play.network.discovery.NetworkBase
 import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryClient
 import com.velocitypulse.preums.play.network.discovery.NetworkDiscoveryServer
+import com.velocitypulse.preums.play.network.game.GameClient
+import com.velocitypulse.preums.play.ui.state.PlayState
+import com.velocitypulse.preums.play.ui.state.UiEvent
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,11 +30,17 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
     private val _playState = mutableStateOf<PlayState>(PlayState.WiFiWarning)
     val playState: PlayState by _playState
 
+    private val _uiEvent = MutableStateFlow(UiEvent())
+    val uiEvent: StateFlow<UiEvent> get() = _uiEvent
+
     private val _clientsList = MutableStateFlow<Set<ClientInfo>>(emptySet())
     val clientsList: StateFlow<Set<ClientInfo>> get() = _clientsList
 
     private val _serverInfoList = MutableStateFlow<Set<ServerInfo>>(emptySet())
     val serverInfoList: StateFlow<Set<ServerInfo>> get() = _serverInfoList
+
+    private var gameClientJob: Job? = null
+    private var _gameClient: GameClient? = null
 
     private var hostInstance: NetworkBase? = null
 
@@ -99,7 +109,43 @@ class PlayViewModel(private val networkInfos: NetworkInfos) : ViewModel() {
         }
     }
 
-    fun onServerSelected(name: String) {}
+    fun onServerSelected(name: String) {
+        viewModelScope.launch {
+            _serverInfoList.value.find { it.name == name }?.let { serverInfo ->
+
+                serverInfo.password?.let { password ->
+                    _uiEvent.emit(UiEvent.ShowServerPasswordQuestion(password))
+                } ?: onServerSelected(name, null)
+            }
+        }
+    }
+
+    fun onServerSelected(name: String, password: String?) {
+        viewModelScope.launch {
+            _serverInfoList.value.find { it.name == name && it.password == password }
+                ?.let { serverInfo ->
+
+                    gameClientJob = viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            _gameClient = GameClient(serverInfo).apply {
+                                // Écouter les événements du jeu
+                                onGameEvent { event ->
+                                    handleGameEvent(event)
+                                }
+                            }
+
+                            _gameClient?.connect()
+                            _gameState.value = GameState.Connected
+
+                        } catch (e: Exception) {
+                            _gameState.value = GameState.Error(e.message ?: "Connection failed")
+                            _gameClient = null
+                        }
+                    }
+
+                }
+        }
+    }
 
     fun onCancelResearchDialog() {
         hostInstance?.stopProcedures()
